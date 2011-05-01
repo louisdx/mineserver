@@ -81,29 +81,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void PacketHandler::init()
 {
-	packets[PACKET_KEEP_ALIVE]               = Packets(0, &PacketHandler::keep_alive);
-	packets[PACKET_LOGIN_REQUEST]            = Packets(PACKET_VARIABLE_LEN, &PacketHandler::login_request);
-	packets[PACKET_HANDSHAKE]                = Packets(PACKET_VARIABLE_LEN, &PacketHandler::handshake);
-	packets[PACKET_CHAT_MESSAGE]             = Packets(PACKET_VARIABLE_LEN, &PacketHandler::chat_message);
-	packets[PACKET_USE_ENTITY]               = Packets(9, &PacketHandler::use_entity);
-	packets[PACKET_PLAYER]                   = Packets(1, &PacketHandler::player);
-	packets[PACKET_PLAYER_POSITION]          = Packets(33, &PacketHandler::player_position);
-	packets[PACKET_PLAYER_LOOK]              = Packets(9, &PacketHandler::player_look);
-	packets[PACKET_PLAYER_POSITION_AND_LOOK] = Packets(41, &PacketHandler::player_position_and_look);
-	packets[PACKET_PLAYER_DIGGING]           = Packets(11, &PacketHandler::player_digging);
-	packets[PACKET_PLAYER_BLOCK_PLACEMENT]   = Packets(PACKET_VARIABLE_LEN, &PacketHandler::player_block_placement);
-	packets[PACKET_HOLDING_CHANGE]           = Packets(2, &PacketHandler::holding_change);
-	packets[PACKET_ARM_ANIMATION]            = Packets(5, &PacketHandler::arm_animation);
-	packets[PACKET_PICKUP_SPAWN]             = Packets(22, &PacketHandler::pickup_spawn);
-	packets[PACKET_DISCONNECT]               = Packets(PACKET_VARIABLE_LEN, &PacketHandler::disconnect);
-	packets[PACKET_RESPAWN]                  = Packets(0, &PacketHandler::respawn);
-	packets[PACKET_INVENTORY_CHANGE]         = Packets(PACKET_VARIABLE_LEN, &PacketHandler::inventory_change);
-	packets[PACKET_INVENTORY_CLOSE]          = Packets(1, &PacketHandler::inventory_close);
-	packets[PACKET_SIGN]                     = Packets(PACKET_VARIABLE_LEN, &PacketHandler::change_sign);
-	packets[PACKET_TRANSACTION]              = Packets(4, &PacketHandler::inventory_transaction);
-	packets[PACKET_ENTITY_CROUCH]            = Packets(5, &PacketHandler::entity_crouch);
-	packets[PACKET_WEATHER]				   = Packets(18, &PacketHandler::unhadledPacket);
-	packets[PACKET_INCREMENT_STATISTICS]     = Packets(6, &PacketHandler::unhadledPacket);
+	packets[eClientToServerPacket_Keep_alive]               = Packets(0, &PacketHandler::keep_alive);
+	packets[eClientToServerPacket_Login_request]            = Packets(PACKET_VARIABLE_LEN, &PacketHandler::login_request);
+	packets[eClientToServerPacket_Handshake]                = Packets(PACKET_VARIABLE_LEN, &PacketHandler::handshake);
+	packets[eClientToServerPacket_Chat_message]             = Packets(PACKET_VARIABLE_LEN, &PacketHandler::chat_message);
+	packets[eClientToServerPacket_Use_entity]               = Packets(9, &PacketHandler::use_entity);
+	packets[eClientToServerPacket_Player]                   = Packets(1, &PacketHandler::player);
+	packets[eClientToServerPacket_Player_position]          = Packets(33, &PacketHandler::player_position);
+	packets[eClientToServerPacket_Player_look]              = Packets(9, &PacketHandler::player_look);
+	packets[eClientToServerPacket_Player_position_and_look] = Packets(41, &PacketHandler::player_position_and_look);
+	packets[eClientToServerPacket_Player_digging]           = Packets(11, &PacketHandler::player_digging);
+	packets[eClientToServerPacket_Player_block_placement]   = Packets(PACKET_VARIABLE_LEN, &PacketHandler::player_block_placement);
+	packets[eClientToServerPacket_Holding_change]           = Packets(2, &PacketHandler::holding_change);
+	packets[eClientToServerPacket_Arm_animation]            = Packets(5, &PacketHandler::arm_animation);
+	packets[eServerToClientPacket_Pickup_spawn]             = Packets(22, &PacketHandler::pickup_spawn);
+	packets[eClientToServerPacket_Disconnect]               = Packets(PACKET_VARIABLE_LEN, &PacketHandler::disconnect);
+	packets[eClientToServerPacket_Respawn]                  = Packets(0, &PacketHandler::respawn);
+	packets[eClientToServerPacket_Inventory_change]         = Packets(PACKET_VARIABLE_LEN, &PacketHandler::inventory_change);
+	packets[eClientToServerPacket_Inventory_close]          = Packets(1, &PacketHandler::inventory_close);
+	packets[eClientToServerPacket_Sign]                     = Packets(PACKET_VARIABLE_LEN, &PacketHandler::change_sign);
+	packets[eServerToClientPacket_Transaction]              = Packets(4, &PacketHandler::inventory_transaction);
+	packets[eClientToServerPacket_Entity_crouch]            = Packets(5, &PacketHandler::entity_crouch);
+	packets[eServerToClientPacket_Weather]				   = Packets(18, &PacketHandler::unhadledPacket);
+	packets[eServerToClientPacket_Increment_statistics]     = Packets(6, &PacketHandler::unhadledPacket);
 
 
 
@@ -193,7 +193,7 @@ int PacketHandler::change_sign(User* user)
 
 		//Send sign packet to everyone
 		Packet pkt;
-		pkt << (int8_t)PACKET_SIGN << x << y << z;
+		pkt << (int8_t)eClientToServerPacket_Sign << x << y << z;
 		pkt << strings1 << strings2 << strings3 << strings4;
 		user->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 	}
@@ -474,13 +474,13 @@ int PacketHandler::handshake(User* user)
 	{
 		// Send the unique hash for this player to prompt the client to go to minecraft.net to validate
 		LOG(INFO, "Packets", "Handshake: Giving player " + player + " their minecraft.net hash of: " + hash(player));
-		user->buffer << (int8_t)PACKET_HANDSHAKE << hash(player);
+		user->buffer << (int8_t)eClientToServerPacket_Handshake << hash(player);
 	}
 	else
 	{
 		// Send "no validation or password needed" validation
 		LOG(INFO, "Packets", "Handshake: No validation required for player " + player + ".");
-		user->buffer << (int8_t)PACKET_HANDSHAKE << std::wstring(L"-");
+		user->buffer << (int8_t)eClientToServerPacket_Handshake << std::wstring(L"-");
 	}
 	// TODO: Add support for prompting user for Server password (once client supports it)
 
@@ -940,7 +940,7 @@ int PacketHandler::player_block_placement(User* user)
 		int32_t EID = Mineserver::generateEID();
 		Packet pkt;
 		// MINECART
-		pkt << PACKET_ADD_OBJECT << (int32_t)EID << (int8_t)10 << (int32_t)(x * 32 + 16) << (int32_t)(y * 32) << (int32_t)(z * 32 + 16);
+		pkt << eServerToClientPacket_Add_object << (int32_t)EID << (int8_t)10 << (int32_t)(x * 32 + 16) << (int32_t)(y * 32) << (int32_t)(z * 32 + 16);
 		user->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 	}
 
@@ -1184,7 +1184,7 @@ int PacketHandler::holding_change(User* user)
 
 	//Send holding change to others
 	Packet pkt;
-	pkt << (int8_t)PACKET_ENTITY_EQUIPMENT << (int32_t)user->UID << (int16_t)0 << (int16_t)user->inv[itemSlot + 36].getType() << (int16_t)user->inv[itemSlot + 36].getHealth();
+	pkt << (int8_t)eClientToServerPacket_Entity_equipment << (int32_t)user->UID << (int16_t)0 << (int16_t)user->inv[itemSlot + 36].getType() << (int16_t)user->inv[itemSlot + 36].getHealth();
 	user->sendOthers((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 
 	// Set current itemID to user
@@ -1207,7 +1207,7 @@ int PacketHandler::arm_animation(User* user)
 	user->buffer.removePacket();
 
 	Packet pkt;
-	pkt << (int8_t)PACKET_ARM_ANIMATION << (int32_t)user->UID << animType;
+	pkt << (int8_t)eClientToServerPacket_Arm_animation << (int32_t)user->UID << animType;
 	user->sendOthers((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 
 	(static_cast<Hook1<bool, const char*>*>(Mineserver::get()->plugin()->getHook("PlayerArmSwing")))->doAll(user->nick.c_str());
@@ -1299,13 +1299,13 @@ int PacketHandler::use_entity(User* user)
 		//Attach
 		if (user->attachedTo == 0)
 		{
-			pkt << PACKET_ATTACH_ENTITY << (int32_t)user->UID << (int32_t)target;
+			pkt << eServerToClientPacket_Attach_entity << (int32_t)user->UID << (int32_t)target;
 			user->attachedTo = target;
 		}
 		//Detach
 		else
 		{
-			pkt << PACKET_ATTACH_ENTITY << (int32_t)user->UID << (int32_t) - 1;
+			pkt << eServerToClientPacket_Attach_entity << (int32_t)user->UID << (int32_t) - 1;
 			user->attachedTo = 0;
 		}
 		user->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
@@ -1325,7 +1325,7 @@ int PacketHandler::use_entity(User* user)
 				if (User::all()[i]->health <= 0)
 				{
 					Packet pkt;
-					pkt << PACKET_DEATH_ANIMATION << (int32_t)User::all()[i]->UID << (int8_t)3;
+					pkt << eServerToClientPacket_Death_animation << (int32_t)User::all()[i]->UID << (int8_t)3;
 					User::all()[i]->sendOthers((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 				}
 				break;

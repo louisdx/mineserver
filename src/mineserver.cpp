@@ -708,7 +708,7 @@ bool Mineserver::run()
       {
         // Send server time
         Packet pkt;
-        pkt << (int8_t)PACKET_TIME_UPDATE << (int64_t)m_map[0]->mapTime;
+        pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)m_map[0]->mapTime;
         User::all()[0]->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
       }
 

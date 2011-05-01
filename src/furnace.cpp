@@ -282,13 +282,13 @@ void Furnace::sendToAllUsers()
         {
           if (data->items[j].getType() != -1)
           {
-            (*inv)[openinv]->users[user]->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)data->items[j].getType()
+            (*inv)[openinv]->users[user]->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)data->items[j].getType()
                                                  << (int8_t)(data->items[j].getCount()) << (int16_t)data->items[j].getHealth();
           }
         }
 
-        (*inv)[openinv]->users[user]->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_ARROW << (int16_t)(data->cookTime * 18);
-        (*inv)[openinv]->users[user]->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_FIRE  << (int16_t)(data->burnTime * 3);
+        (*inv)[openinv]->users[user]->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_ARROW << (int16_t)(data->cookTime * 18);
+        (*inv)[openinv]->users[user]->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_FIRE  << (int16_t)(data->burnTime * 3);
       }
 
       break;

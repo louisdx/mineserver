@@ -222,7 +222,7 @@ bool User::sendLoginInfo()
   loadData();
 
   // Login OK package
-  buffer << (int8_t)PACKET_LOGIN_RESPONSE << (int32_t)UID << hsttonst(std::wstring(L"")) << (int64_t)0 << (int8_t)0;
+  buffer << (int8_t)eServerToClientPacket_Login_response << (int32_t)UID << hsttonst(std::wstring(L"")) << (int64_t)0 << (int8_t)0;
 
   spawnOthers();
   // Put nearby chunks to queue
@@ -242,7 +242,7 @@ bool User::sendLoginInfo()
   {
     if (pos.map == (*i)->map && (*i)->spawned)
     {
-      loginBuffer << PACKET_MOB_SPAWN << (int32_t)(*i)->UID << (int8_t)(*i)->type
+      loginBuffer << eServerToClientPacket_Mob_spawn << (int32_t)(*i)->UID << (int8_t)(*i)->type
                   << (int32_t)(*i)->x << (int32_t)(*i)->y << (int32_t)(*i)->z
                   << (int8_t)(*i)->yaw << (int8_t)(*i)->pitch;
       if ((*i)->type == MOB_SHEEP)
@@ -258,9 +258,9 @@ bool User::sendLoginInfo()
 
 
   // Send spawn position
-  loginBuffer << (int8_t)PACKET_SPAWN_POSITION << (int32_t)pos.x << ((int32_t)pos.y + 2) << (int32_t)pos.z;
-  loginBuffer << (int8_t)PACKET_TIME_UPDATE << (int64_t)Mineserver::get()->map(pos.map)->mapTime;
-  //  loginBuffer << (int8_t)PACKET_NAMED_ENTITY_SPAWN << (int32_t)UID << nick
+  loginBuffer << (int8_t)eServerToClientPacket_Spawn_position << (int32_t)pos.x << ((int32_t)pos.y + 2) << (int32_t)pos.z;
+  loginBuffer << (int8_t)eServerToClientPacket_Time_update << (int64_t)Mineserver::get()->map(pos.map)->mapTime;
+  //  loginBuffer << (int8_t)eServerToClientPacket_Named_entity_spawn << (int32_t)UID << nick
   //      << (int32_t)(pos.x*32) << (int32_t)((pos.y+2)*32) << (int32_t)(pos.z*32) << (int8_t)0 << (int8_t)0
   //      << (int16_t)0;
 
@@ -292,7 +292,7 @@ bool User::sendLoginInfo()
 // Kick player
 bool User::kick(std::string kickMsg)
 {
-  buffer << (int8_t)PACKET_KICK << kickMsg;
+  buffer << (int8_t)eServerToClientPacket_Kick << kickMsg;
 
   (static_cast<Hook2<bool, const char*, const char*>*>(Mineserver::get()->plugin()->getHook("PlayerKickPost")))->doAll(nick.c_str(), kickMsg.c_str());
 
@@ -610,7 +610,7 @@ bool User::updatePos(double x, double y, double z, double stance)
     if (newChunk == oldChunk)
     {
       Packet telePacket;
-      telePacket << (int8_t)PACKET_ENTITY_TELEPORT
+      telePacket << (int8_t)eServerToClientPacket_Entity_teleport
                  << (int32_t)UID << (int32_t)(x * 32) << (int32_t)(y * 32)
                  << (int32_t)(z * 32) << angleToByte(pos.yaw) << angleToByte(pos.pitch);
       newChunk->sendPacket(telePacket, this);
@@ -626,7 +626,7 @@ bool User::updatePos(double x, double y, double z, double stance)
       if (toremove.size())
       {
         Packet pkt;
-        pkt << (int8_t)PACKET_DESTROY_ENTITY << (int32_t)UID;
+        pkt << (int8_t)eServerToClientPacket_Destroy_entity << (int32_t)UID;
         std::list<User*>::iterator iter = toremove.begin(), end = toremove.end();
         for (; iter != end ; iter++)
         {
@@ -637,7 +637,7 @@ bool User::updatePos(double x, double y, double z, double stance)
       if (toadd.size())
       {
         Packet pkt;
-        pkt << (int8_t)PACKET_NAMED_ENTITY_SPAWN << (int32_t)UID << nick
+        pkt << (int8_t)eServerToClientPacket_Named_entity_spawn << (int32_t)UID << nick
             << (int32_t)(x * 32) << (int32_t)(y * 32) << (int32_t)(z * 32)
             << angleToByte(pos.yaw) << angleToByte(pos.pitch) << (int16_t)curItem;
 
@@ -653,7 +653,7 @@ bool User::updatePos(double x, double y, double z, double stance)
 
       // TODO: Determine those who where present for both.
       Packet telePacket;
-      telePacket << (int8_t)PACKET_ENTITY_TELEPORT
+      telePacket << (int8_t)eServerToClientPacket_Entity_teleport
                  << (int32_t)UID << (int32_t)(x * 32) << (int32_t)(y * 32) << (int32_t)(z * 32)
                  << angleToByte(pos.yaw) << angleToByte(pos.pitch);
       newChunk->sendPacket(telePacket, this);
@@ -745,14 +745,14 @@ bool User::updatePos(double x, double y, double z, double stance)
       }
 
       Packet destroyPkt;
-      destroyPkt << (int8_t)PACKET_DESTROY_ENTITY << (int32_t)UID;
+      destroyPkt << (int8_t)eServerToClientPacket_Destroy_entity << (int32_t)UID;
 
       Packet spawnPkt;
-      spawnPkt << (int8_t)PACKET_NAMED_ENTITY_SPAWN << (int32_t)UID << nick
+      spawnPkt << (int8_t)eServerToClientPacket_Named_entity_spawn << (int32_t)UID << nick
                << (int32_t)(x * 32) << (int32_t)(y * 32) << (int32_t)(z * 32) << angleToByte(pos.yaw) << angleToByte(pos.pitch) << (int16_t)curItem;
 
       Packet telePacket;
-      telePacket << (int8_t)PACKET_ENTITY_TELEPORT
+      telePacket << (int8_t)eServerToClientPacket_Entity_teleport
                  << (int32_t)UID << (int32_t)(x * 32) << (int32_t)(y * 32) << (int32_t)(z * 32) << angleToByte(pos.yaw) << angleToByte(pos.pitch);
 
       toTeleport.erase(this);
@@ -800,11 +800,11 @@ bool User::updatePos(double x, double y, double z, double stance)
             if (Mineserver::get()->inventory()->isSpace(this, (*iter)->item, (*iter)->count))
             {
               // Send player collect item packet
-              buffer << (int8_t)PACKET_COLLECT_ITEM << (int32_t)(*iter)->EID << (int32_t)UID;
+              buffer << (int8_t)eServerToClientPacket_Collect_item << (int32_t)(*iter)->EID << (int32_t)UID;
 
               // Send everyone destroy_entity-packet
               Packet pkt;
-              pkt << (int8_t)PACKET_DESTROY_ENTITY << (int32_t)(*iter)->EID;
+              pkt << (int8_t)eServerToClientPacket_Destroy_entity << (int32_t)(*iter)->EID;
               newChunk->sendPacket(pkt);
 
               // Add items to inventory
@@ -902,7 +902,7 @@ bool User::checkOnBlock(int32_t x, int8_t y, int32_t z)
 bool User::updateLook(float yaw, float pitch)
 {
   Packet pkt;
-  pkt << (int8_t)PACKET_ENTITY_LOOK << (int32_t)UID << angleToByte(yaw) << angleToByte(pitch);
+  pkt << (int8_t)eServerToClientPacket_Entity_look << (int32_t)UID << angleToByte(yaw) << angleToByte(pitch);
 
   sChunk* chunk = Mineserver::get()->map(pos.map)->chunks.getChunk(blockToChunk((int32_t)pos.x), blockToChunk((int32_t)pos.z));
   if (chunk != NULL)
@@ -922,7 +922,7 @@ bool User::sendOthers(uint8_t* data, uint32_t len)
     if (Mineserver::get()->users()[i]->fd != this->fd && Mineserver::get()->users()[i]->logged)
     {
       // Don't send to his user if he is DND and the message is a chat message
-      if (!(Mineserver::get()->users()[i]->dnd && data[0] == PACKET_CHAT_MESSAGE))
+      if (!(Mineserver::get()->users()[i]->dnd && data[0] == eClientToServerPacket_Chat_message))
       {
         Mineserver::get()->users()[i]->buffer.addToWrite(data, len);
       }
@@ -972,7 +972,7 @@ bool User::sendAll(uint8_t* data, uint32_t len)
     if (Mineserver::get()->users()[i]->fd && Mineserver::get()->users()[i]->logged)
     {
       // Don't send to his user if he is DND and the message is a chat message
-      if (!(Mineserver::get()->users()[i]->dnd && data[0] == PACKET_CHAT_MESSAGE))
+      if (!(Mineserver::get()->users()[i]->dnd && data[0] == eClientToServerPacket_Chat_message))
       {
         Mineserver::get()->users()[i]->buffer.addToWrite(data, len);
       }
@@ -1050,7 +1050,7 @@ bool User::addQueue(int x, int z)
   }
 
   // Pre chunk
-  buffer << (int8_t)PACKET_PRE_CHUNK << x << z << (int8_t)1;
+  buffer << (int8_t)eServerToClientPacket_Pre_chunk << x << z << (int8_t)1;
 
   this->mapQueue.push_back(newMap);
 
@@ -1122,7 +1122,7 @@ bool User::popMap()
   while (this->mapRemoveQueue.size())
   {
     // Pre chunk
-    buffer << (int8_t)PACKET_PRE_CHUNK << (int32_t)mapRemoveQueue[0].x() << (int32_t)mapRemoveQueue[0].z() << (int8_t)0;
+    buffer << (int8_t)eServerToClientPacket_Pre_chunk << (int32_t)mapRemoveQueue[0].x() << (int32_t)mapRemoveQueue[0].z() << (int8_t)0;
 
     // Delete from known list
     delKnown(mapRemoveQueue[0].x(), mapRemoveQueue[0].z());
@@ -1198,7 +1198,7 @@ bool User::teleport(double x, double y, double z, size_t map)
   }
   if (map == pos.map)
   {
-    buffer << (int8_t)PACKET_PLAYER_POSITION_AND_LOOK << x << y << 0.0 << z << 0.f << 0.f << (int8_t)1;
+    buffer << (int8_t)eClientToServerPacket_Player_position_and_look << x << y << 0.0 << z << 0.f << 0.f << (int8_t)1;
   }
 
   //Also update pos for other players
@@ -1213,7 +1213,7 @@ bool User::teleport(double x, double y, double z, size_t map)
 bool User::spawnUser(int x, int y, int z)
 {
   Packet pkt;
-  pkt << (int8_t)PACKET_NAMED_ENTITY_SPAWN << (int32_t)UID << nick
+  pkt << (int8_t)eServerToClientPacket_Named_entity_spawn << (int32_t)UID << nick
       << (int32_t)x << (int32_t)y << (int32_t)z << (int8_t)0 << (int8_t)0
       << (int16_t)0;
   sChunk* chunk = Mineserver::get()->map(pos.map)->chunks.getChunk(blockToChunk(x >> 5), blockToChunk(z >> 5));
@@ -1232,7 +1232,7 @@ bool User::spawnOthers()
     //    if (Mineserver::get()->users()[i]->logged && Mineserver::get()->users()[i]->UID != this->UID && Mineserver::get()->users()[i]->nick != this->nick)
     if (Mineserver::get()->users()[i]->logged)
     {
-      loginBuffer << (int8_t)PACKET_NAMED_ENTITY_SPAWN << (int32_t)Mineserver::get()->users()[i]->UID << Mineserver::get()->users()[i]->nick
+      loginBuffer << (int8_t)eServerToClientPacket_Named_entity_spawn << (int32_t)Mineserver::get()->users()[i]->UID << Mineserver::get()->users()[i]->nick
                   << (int32_t)(Mineserver::get()->users()[i]->pos.x * 32) << (int32_t)(Mineserver::get()->users()[i]->pos.y * 32) << (int32_t)(Mineserver::get()->users()[i]->pos.z * 32)
                   << (int8_t)0 << (int8_t)0 << (int16_t)0;
       for (int b = 0; b < 5; b++)
@@ -1247,7 +1247,7 @@ bool User::spawnOthers()
           n = 9 - b;
         }
         int type = Mineserver::get()->users()[i]->inv[n].getType();
-        loginBuffer << (int8_t)PACKET_ENTITY_EQUIPMENT << (int32_t)Mineserver::get()->users()[i]->UID
+        loginBuffer << (int8_t)eClientToServerPacket_Entity_equipment << (int32_t)Mineserver::get()->users()[i]->UID
                     << (int16_t)b << (int16_t)type << (int16_t) 0;
       }
     }
@@ -1391,7 +1391,7 @@ bool User::sethealth(int userHealth)
   }
   if (health == userHealth)
   {
-    buffer << (int8_t)PACKET_UPDATE_HEALTH << (int16_t)userHealth;
+    buffer << (int8_t)eServerToClientPacket_Update_health << (int16_t)userHealth;
     return false;
   }
   if (userHealth < health)
@@ -1402,7 +1402,7 @@ bool User::sethealth(int userHealth)
       return false;
     }
     Packet pkt;
-    pkt << (int8_t)PACKET_ARM_ANIMATION << (int32_t)UID << (int8_t)2;
+    pkt << (int8_t)eClientToServerPacket_Arm_animation << (int32_t)UID << (int8_t)2;
     sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 
 
@@ -1410,7 +1410,7 @@ bool User::sethealth(int userHealth)
   healthtimeout = time(NULL);
 
   health = userHealth;
-  buffer << (int8_t)PACKET_UPDATE_HEALTH << (int16_t)userHealth;
+  buffer << (int8_t)eServerToClientPacket_Update_health << (int16_t)userHealth;
   return true;
 }
 
@@ -1418,9 +1418,9 @@ bool User::respawn()
 {
   this->health = 20;
   this->timeUnderwater = 0;
-  buffer << (int8_t)PACKET_RESPAWN;
+  buffer << (int8_t)eClientToServerPacket_Respawn;
   Packet destroyPkt;
-  destroyPkt << (int8_t)PACKET_DESTROY_ENTITY << (int32_t)UID;
+  destroyPkt << (int8_t)eServerToClientPacket_Destroy_entity << (int32_t)UID;
   sChunk* chunk = Mineserver::get()->map(pos.map)->getMapData(blockToChunk((int32_t)pos.x), blockToChunk((int32_t)pos.z));
   if (chunk != NULL)
   {
@@ -1437,7 +1437,7 @@ bool User::respawn()
   }
 
   Packet spawnPkt;
-  spawnPkt << (int8_t)PACKET_NAMED_ENTITY_SPAWN << (int32_t)UID << nick
+  spawnPkt << (int8_t)eServerToClientPacket_Named_entity_spawn << (int32_t)UID << nick
            << (int32_t)(pos.x * 32) << (int32_t)(pos.y * 32) << (int32_t)(pos.z * 32) << angleToByte(pos.yaw) << angleToByte(pos.pitch) << (int16_t)curItem;
 
   chunk = Mineserver::get()->map(pos.map)->getMapData(blockToChunk((int32_t)pos.x), blockToChunk((int32_t)pos.z));

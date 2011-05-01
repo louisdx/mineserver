@@ -63,14 +63,14 @@ void Item::sendUpdate()
     if (slot == player->curItem + 36)
     {
       Packet pkt;
-      pkt << (int8_t)PACKET_ENTITY_EQUIPMENT << (int32_t)player->UID
+      pkt << (int8_t)eClientToServerPacket_Entity_equipment << (int32_t)player->UID
           << (int16_t)0 << (int16_t)type << (int16_t) health;
       player->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
     }
     if (slot >= 5 && slot <= 8)
     {
       Packet pkt;
-      pkt << (int8_t)PACKET_ENTITY_EQUIPMENT << (int32_t)player->UID
+      pkt << (int8_t)eClientToServerPacket_Entity_equipment << (int32_t)player->UID
           << (int16_t)(5 - (slot - 4)) << (int16_t)type << (int16_t) 0;
       player->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
     }
@@ -81,7 +81,7 @@ void Item::sendUpdate()
       window = -1;
       t_slot = 0;
     }
-    player->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)window
+    player->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)window
                    << (int16_t)t_slot << (int16_t) type;
     if (type != -1)
     {
@@ -474,7 +474,7 @@ bool Inventory::canBeArmour(int slot, int type)
 bool Inventory::windowClick(User* user, int8_t windowID, int16_t slot, int8_t rightClick, int16_t actionNumber, int16_t itemID, int8_t itemCount, int16_t itemUses)
 {
   //Ack
-  user->buffer << (int8_t)PACKET_TRANSACTION << (int8_t)windowID << (int16_t)actionNumber << (int8_t)1;
+  user->buffer << (int8_t)eServerToClientPacket_Transaction << (int8_t)windowID << (int16_t)actionNumber << (int8_t)1;
 
   //Mineserver::get()->logger()->log(1,"window: " + dtos(windowID) + " slot: " + dtos(slot) + " (" + dtos(actionNumber) + ") itemID: " + dtos(itemID));
   //Click outside the window
@@ -867,7 +867,7 @@ bool Inventory::windowClick(User* user, int8_t windowID, int16_t slot, int8_t ri
       {
         for(uint32_t i = 0; i < otherUsers->size(); i++)
         {
-          (*otherUsers)[i]->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)windowID << (int16_t)slot << (int16_t)slotItem->type;
+          (*otherUsers)[i]->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)windowID << (int16_t)slot << (int16_t)slotItem->type;
           if(slotItem->type != -1)
           {
             (*otherUsers)[i]->buffer << (int8_t)slotItem->count << (int16_t)slotItem->health;
@@ -884,7 +884,7 @@ bool Inventory::windowClick(User* user, int8_t windowID, int16_t slot, int8_t ri
         {
           if((*otherUsers)[i] != user)
           {
-            (*otherUsers)[i]->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)windowID << (int16_t)slot << (int16_t)slotItem->type;
+            (*otherUsers)[i]->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)windowID << (int16_t)slot << (int16_t)slotItem->type;
             if(slotItem->type != -1)
             {
               (*otherUsers)[i]->buffer << (int8_t)slotItem->count << (int16_t)slotItem->health;
@@ -902,7 +902,7 @@ bool Inventory::windowClick(User* user, int8_t windowID, int16_t slot, int8_t ri
         {
           if((*otherUsers)[i] != user)
           {
-            (*otherUsers)[i]->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)windowID << (int16_t)slot << (int16_t)slotItem->type;
+            (*otherUsers)[i]->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)windowID << (int16_t)slot << (int16_t)slotItem->type;
             if(slotItem->type != -1)
             {
               (*otherUsers)[i]->buffer << (int8_t)slotItem->count << (int16_t)slotItem->health;
@@ -933,7 +933,7 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
   switch (type)
   {
   case WINDOW_CHEST:
-    user->buffer << (int8_t)PACKET_OPEN_WINDOW << (int8_t)WINDOW_CHEST  << (int8_t)INVENTORYTYPE_CHEST;
+    user->buffer << (int8_t)eServerToClientPacket_Open_window << (int8_t)WINDOW_CHEST  << (int8_t)INVENTORYTYPE_CHEST;
 	user->buffer.writeString(std::string("Chest"));
 	user->buffer << (int8_t)27;
 
@@ -945,7 +945,7 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
         {
           if (chunk->chests[i]->items[j].getType() != -1)
           {
-            user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_CHEST << (int16_t)j << (int16_t)chunk->chests[i]->items[j].getType()
+            user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_CHEST << (int16_t)j << (int16_t)chunk->chests[i]->items[j].getType()
                          << (int8_t)(chunk->chests[i]->items[j].getCount()) << (int16_t)chunk->chests[i]->items[j].getHealth();
           }
         }
@@ -954,7 +954,7 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
     }
     break;
   case WINDOW_WORKBENCH:
-	  user->buffer << (int8_t)PACKET_OPEN_WINDOW << (int8_t)WINDOW_WORKBENCH  << (int8_t)INVENTORYTYPE_WORKBENCH;
+	  user->buffer << (int8_t)eServerToClientPacket_Open_window << (int8_t)WINDOW_WORKBENCH  << (int8_t)INVENTORYTYPE_WORKBENCH;
 	  user->buffer.writeString(std::string("Workbench"));
 	  user->buffer  << (int8_t)0;
 
@@ -968,7 +968,7 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
         {
           if (openWorkbenches[i]->workbench[j].getType() != -1)
           {
-            user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_WORKBENCH << (int16_t)j << (int16_t)openWorkbenches[i]->workbench[j].getType()
+            user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_WORKBENCH << (int16_t)j << (int16_t)openWorkbenches[i]->workbench[j].getType()
                          << (int8_t)(openWorkbenches[i]->workbench[j].getCount()) << (int16_t)openWorkbenches[i]->workbench[j].getHealth();
           }
         }
@@ -978,7 +978,7 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
     break;
   case WINDOW_FURNACE:
 
-    user->buffer << (int8_t)PACKET_OPEN_WINDOW << (int8_t)WINDOW_FURNACE  << (int8_t)INVENTORYTYPE_FURNACE;
+    user->buffer << (int8_t)eServerToClientPacket_Open_window << (int8_t)WINDOW_FURNACE  << (int8_t)INVENTORYTYPE_FURNACE;
 	user->buffer.writeString(std::string("Furnace"));
 	user->buffer << (int8_t)0;
 
@@ -990,12 +990,12 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
         {
           if (chunk->furnaces[i]->items[j].getType() != -1)
           {
-            user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)chunk->furnaces[i]->items[j].getType()
+            user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)chunk->furnaces[i]->items[j].getType()
                          << (int8_t)(chunk->furnaces[i]->items[j].getCount()) << (int16_t)chunk->furnaces[i]->items[j].getHealth();
           }
         }
-        user->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)0 << (int16_t)(chunk->furnaces[i]->cookTime * 18);
-        user->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)1 << (int16_t)(chunk->furnaces[i]->burnTime * 3);
+        user->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)0 << (int16_t)(chunk->furnaces[i]->cookTime * 18);
+        user->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)1 << (int16_t)(chunk->furnaces[i]->burnTime * 3);
         break;
       }
     }
@@ -1303,7 +1303,7 @@ bool Inventory::doCraft(Item* slots, int8_t width, int8_t height)
 bool Inventory::setSlot(User* user, int8_t windowID, int16_t slot, int16_t itemID, int8_t count, int16_t health)
 {
   //Mineserver::get()->logger()->log(1,"Setslot: " + dtos(slot) + " to " + dtos(itemID) + " (" + dtos(count) + ") health: " + dtos(health));
-  user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)windowID << (int16_t)slot   << (int16_t)itemID;
+  user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)windowID << (int16_t)slot   << (int16_t)itemID;
   if (itemID != -1)
   {
     user->buffer << (int8_t)count << (int16_t)health;

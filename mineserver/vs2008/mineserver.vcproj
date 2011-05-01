@@ -723,6 +723,34 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="notchian"
+				>
+				<File
+					RelativePath="..\..\src\notchian\EClientToServerPacket.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\notchian\EServerToClientPacket.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\notchian\notchianDataTypes.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\notchian\notchianDataTypes.inl"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="util"
+				>
+				<File
+					RelativePath="..\..\src\util\Enum.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>

@@ -964,7 +964,7 @@ bool Map::setBlock(int x, int y, int z, char type, char meta)
 bool Map::sendBlockChange(int x, int y, int z, char type, char meta)
 {
   Packet pkt;
-  pkt << PACKET_BLOCK_CHANGE << (int32_t)x << (int8_t)y << (int32_t)z << (int8_t)type << (int8_t)meta;
+  pkt << eServerToClientPacket_Block_change << (int32_t)x << (int8_t)y << (int32_t)z << (int8_t)type << (int8_t)meta;
 
   sChunk* chunk = chunks.getChunk(blockToChunk(x), blockToChunk(z));
   if (chunk == NULL)
@@ -980,7 +980,7 @@ bool Map::sendBlockChange(int x, int y, int z, char type, char meta)
 bool Map::sendNote(int x, int y, int z, char instrument, char pitch)
 {
   Packet pkt;
-  pkt << PACKET_PLAY_NOTE << (int32_t)x << (int16_t)y << (int32_t)z << (int8_t)instrument << (int8_t)pitch;
+  pkt << eServerToClientPacket_Play_note << (int32_t)x << (int16_t)y << (int32_t)z << (int8_t)instrument << (int8_t)pitch;
 
   sChunk* chunk = chunks.getChunk(blockToChunk(x), blockToChunk(z));
   if (chunk == NULL)
@@ -1012,7 +1012,7 @@ bool Map::sendPickupSpawn(spawnedItem item)
   chunk->items.push_back(storedItem);
 
   Packet pkt;
-  pkt << PACKET_PICKUP_SPAWN << (int32_t)item.EID << (int16_t)item.item << (int8_t)item.count << (int16_t)item.health
+  pkt << eServerToClientPacket_Pickup_spawn << (int32_t)item.EID << (int16_t)item.item << (int8_t)item.count << (int16_t)item.health
       << (int32_t)item.pos.x() << (int32_t)item.pos.y() << (int32_t)item.pos.z()
       << (int8_t)0 << (int8_t)0 << (int8_t)0;
 
@@ -1080,9 +1080,9 @@ bool Map::sendProjectileSpawn(User* user, int8_t projID)
               -(user->pos.pitch / 90.f) * 32768.f,
               cosf(-(user->pos.yaw / 360.f) * 2.f * M_PI) * tempMult * 32768.f
             );
-  pkt << (int8_t)PACKET_ENTITY << (int32_t)EID
-      << (int8_t)PACKET_ADD_OBJECT << (int32_t)EID << (int8_t)projID << (int32_t)pos.x() << (int32_t)pos.y() << (int32_t)pos.z()
-      << (int8_t)PACKET_ENTITY_VELOCITY << (int32_t)EID << (int16_t)vel.x() << (int16_t)vel.y() << (int16_t)vel.z();
+  pkt << (int8_t)eServerToClientPacket_Entity << (int32_t)EID
+      << (int8_t)eServerToClientPacket_Add_object << (int32_t)EID << (int8_t)projID << (int32_t)pos.x() << (int32_t)pos.y() << (int32_t)pos.z()
+      << (int8_t)eServerToClientPacket_Entity_velocity << (int32_t)EID << (int16_t)vel.x() << (int16_t)vel.y() << (int16_t)vel.z();
 
   user->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 
@@ -1602,7 +1602,7 @@ bool Map::sendMultiBlocks(std::vector<vec>* blocks)
     }
     Packet packet, pC, pT, pM;
     int offsetx = chunk_x << 4, offsetz = chunk_z << 4;
-    packet << (int8_t) PACKET_MULTI_BLOCK_CHANGE << (int32_t) chunk_x << (int32_t) chunk_z << (int16_t) toRem.size();
+    packet << (int8_t) eServerToClientPacket_Multi_block_change << (int32_t) chunk_x << (int32_t) chunk_z << (int16_t) toRem.size();
     for (size_t i = 0; i < toRem.size(); i++)
     {
       uint8_t block, meta;
@@ -1670,7 +1670,7 @@ void Map::sendToUser(User* user, int x, int z, bool login)
 
 
   // Chunk
-  (*p) << (int8_t)PACKET_MAP_CHUNK << (int32_t)(mapposx * 16) << (int16_t)0 << (int32_t)(mapposz * 16)
+  (*p) << (int8_t)eServerToClientPacket_Map_chunk << (int32_t)(mapposx * 16) << (int16_t)0 << (int32_t)(mapposz * 16)
        << (int8_t)15 << (int8_t)127 << (int8_t)15;
 
   memcpy(&mapdata[0], chunk->blocks, 32768);
@@ -1690,7 +1690,7 @@ void Map::sendToUser(User* user, int x, int z, bool login)
   //Push sign data to player
   for (uint32_t i = 0; i < chunk->signs.size(); i++)
   {
-    (*p) << (int8_t)PACKET_SIGN << chunk->signs[i]->x << (int16_t)chunk->signs[i]->y << chunk->signs[i]->z;
+    (*p) << (int8_t)eClientToServerPacket_Sign << chunk->signs[i]->x << (int16_t)chunk->signs[i]->y << chunk->signs[i]->z;
     (*p) << chunk->signs[i]->text1 << chunk->signs[i]->text2 << chunk->signs[i]->text3 << chunk->signs[i]->text4;
   }
 

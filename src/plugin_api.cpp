@@ -216,7 +216,7 @@ bool chat_sendmsgTo(const char* user, const char* msg)
       // Don't send to his user if he is DND and the message is a chat message
       if (userStr == Mineserver::get()->users()[i]->nick)
       {
-        Mineserver::get()->users()[i]->buffer << (int8_t)PACKET_CHAT_MESSAGE << std::string(msg);
+        Mineserver::get()->users()[i]->buffer << (int8_t)eClientToServerPacket_Chat_message << std::string(msg);
         return true;
       }
     }
@@ -234,7 +234,7 @@ bool chat_sendmsg(const char* msg)
       // Don't send to his user if he is DND and the message is a chat message
       if (!(Mineserver::get()->users()[i]->dnd))
       {
-        Mineserver::get()->users()[i]->buffer << (int8_t)PACKET_CHAT_MESSAGE << msgStr;
+        Mineserver::get()->users()[i]->buffer << (int8_t)eClientToServerPacket_Chat_message << msgStr;
       }
     }
   }
@@ -279,7 +279,7 @@ bool map_setTime(int timeValue)
 {
   Mineserver::get()->map(0)->mapTime = timeValue;
   Packet pkt;
-  pkt << (int8_t)PACKET_TIME_UPDATE << (int64_t)Mineserver::get()->map(0)->mapTime;
+  pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)Mineserver::get()->map(0)->mapTime;
 
   if (User::all().size())
   {
