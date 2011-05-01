@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "chat.h"
 
+#include "boost/scoped_array.hpp"
+
 Chat::Chat()
 {
 }
@@ -242,7 +244,7 @@ bool Chat::sendMsg(User* user, std::string msg, MessageTarget action)
 	int strLength = min(kMaxChatMessageLength,wMsg.size());
 	size_t tmpArrayLen = strLength*2 + 3;
 
-	uint8_t* tmpArray    = new uint8_t[tmpArrayLen];
+	boost::scoped_array<uint8_t> tmpArray(new uint8_t[tmpArrayLen]);
 
 	tmpArray[0] = 0x03;
 	tmpArray[1] = 0;
@@ -258,31 +260,29 @@ bool Chat::sendMsg(User* user, std::string msg, MessageTarget action)
 	switch (action)
 	{
 	case ALL:
-	  user->sendAll(tmpArray, tmpArrayLen);
+	  user->sendAll(tmpArray.get(), tmpArrayLen);
 	  break;
 
 	case USER:
-	  user->buffer.addToWrite(tmpArray, tmpArrayLen);
+	  user->buffer.addToWrite(tmpArray.get(), tmpArrayLen);
 	  break;
 
 	case ADMINS:
-	  user->sendAdmins(tmpArray, tmpArrayLen);
+	  user->sendAdmins(tmpArray.get(), tmpArrayLen);
 	  break;
 
 	case OPS:
-	  user->sendOps(tmpArray, tmpArrayLen);
+	  user->sendOps(tmpArray.get(), tmpArrayLen);
 	  break;
 
 	case GUESTS:
-	  user->sendGuests(tmpArray, tmpArrayLen);
+	  user->sendGuests(tmpArray.get(), tmpArrayLen);
 	  break;
 
 	case OTHERS:
-	  user->sendOthers(tmpArray, tmpArrayLen);
+	  user->sendOthers(tmpArray.get(), tmpArrayLen);
 	  break;
 	}
-
-	delete[] tmpArray;
 
 	return true;
 }

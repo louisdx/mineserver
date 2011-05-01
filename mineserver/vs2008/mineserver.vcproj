@@ -663,14 +663,6 @@
 				Name="config"
 				>
 				<File
-					RelativePath="..\..\src\config\lexer.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\src\config\lexer.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\src\config\node.cpp"
 					>
 				</File>
