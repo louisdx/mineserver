@@ -187,7 +187,7 @@ public:
   Packet& operator>>(std::string& str);
 
   void writeString(const std::string& str);
-  std::string& readString();
+  std::string readString();
 
   void operator<<(Packet& other);
 

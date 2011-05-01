@@ -1518,7 +1518,7 @@ void Packet::writeString(const std::string& str)
 
 	addToWrite(&str[0], str.size());
 }
-std::string& Packet::readString()
+std::string Packet::readString()
 {
 	std::string str;
 	uint16_t lenval;
