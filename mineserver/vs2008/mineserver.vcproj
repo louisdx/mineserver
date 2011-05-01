@@ -18,23 +18,83 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="..\..\bin"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="0"
+			ConfigurationType="1"
 			CharacterSet="0"
+			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.meta;$(TargetPath)"
+			WholeProgramOptimization="0"
+			EnableManagedIncrementalBuild="1"
 			>
 			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="..\..\..\do_build.bat onlybuild"
-				ReBuildCommandLine=""
-				CleanCommandLine=""
-				Output=""
-				PreprocessorDefinitions=""
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+				CommandLine="copy ..\..\..\dll\*.dll ..\..\bin\ /Y&#x0D;&#x0A;xcopy ..\..\files\*.* ..\..\bin\ /S /Y&#x0D;&#x0A;"
+				AdditionalDependencies="..\..\bin\binlog.cfg"
+				Outputs="libnoise.dll;pdcurses.dll;zlibwapi.dll"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				InlineFunctionExpansion="0"
+				EnableIntrinsicFunctions="false"
+				FavorSizeOrSpeed="0"
+				WholeProgramOptimization="false"
+				AdditionalIncludeDirectories="../../../include"
+				PreprocessorDefinitions="FADOR_PLUGIN;ZLIB_WINAPI;WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				FloatingPointModel="2"
+				WarningLevel="3"
+				DebugInformationFormat="4"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="Winmm.lib libnoise.lib zlibwapi.lib libevent.lib Ws2_32.lib"
+				AdditionalLibraryDirectories="../../../lib;&quot;$(FrameworkSDKDir)\Lib&quot;"
+				GenerateDebugInformation="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -141,10 +201,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\cliScreen.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\commands.cpp"
 				>
 			</File>
 			<File
@@ -380,14 +436,6 @@
 				</File>
 				<File
 					RelativePath="..\..\src\worldgen\mapgen.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\src\worldgen\mersenne.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\src\worldgen\mersenne.h"
 					>
 				</File>
 				<File
@@ -674,62 +722,6 @@
 					RelativePath="..\..\src\items\projectile.h"
 					>
 				</File>
-			</Filter>
-			<Filter
-				Name="plugins"
-				>
-				<Filter
-					Name="banlist"
-					>
-					<File
-						RelativePath="..\..\src\plugins\banlist\banlist.cpp.unused"
-						>
-					</File>
-					<File
-						RelativePath="..\..\src\plugins\banlist\banlist.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="command"
-					>
-					<File
-						RelativePath="..\..\src\plugins\command\command.cpp.unused"
-						>
-					</File>
-					<File
-						RelativePath="..\..\src\plugins\command\command.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="PyScript"
-					>
-					<File
-						RelativePath="..\..\src\plugins\PyScript\makefile"
-						>
-					</File>
-					<File
-						RelativePath="..\..\src\plugins\PyScript\MineServer.i"
-						>
-					</File>
-					<File
-						RelativePath="..\..\src\plugins\PyScript\PyScript.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\src\plugins\PyScript\PyScript.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\src\plugins\PyScript\python_plugin_api.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\src\plugins\PyScript\python_plugin_api.h"
-						>
-					</File>
-				</Filter>
 			</Filter>
 		</Filter>
 	</Files>
