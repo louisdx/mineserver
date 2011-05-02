@@ -742,6 +742,18 @@
 					RelativePath="..\..\src\util\Enum.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\src\util\NonNull.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\util\Ptr.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\util\safebool.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 	</Files>
