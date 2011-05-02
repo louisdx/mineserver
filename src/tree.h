@@ -32,7 +32,10 @@
 #include "mineserver.h"
 #include "map.h"
 #include "vec.h"
+#include "util/NonNull.h"
 #include <stack>
+
+#include <boost/scoped_ptr.hpp>
 
 enum { MAX_TRUNK = 13, MIN_TRUNK = 5, MAX_CANOPY = 4, MIN_CANOPY = 3 ,
        BRANCHING_HEIGHT = 7, BRANCHING_CHANCE = 10,
@@ -113,7 +116,7 @@ public:
 protected:
   void set(int32_t xloc, int32_t yloc, int32_t zloc, int blocktType, char metaData);
 private:
-  Trunk* m_Branch[256]; // 1KB on x86 and 2KB on x86_64 Faster than stack or vector tho :)
+	boost::scoped_ptr<Trunk> m_Branch[256]; // 1KB on x86 and 2KB on x86_64 Faster than stack or vector tho :)
   // With full array of allocated classes it rounds up to...
   // 3.6KB on x86 :F 4.6KB on x86_64
   // it is a good enough buffer for absolutely MASSIVE MASSIVE TREES
@@ -121,7 +124,7 @@ private:
   uint8_t n_branches;
 
   void generateCanopy();
-  void generateBranches(Trunk*);
+  void generateBranches(NonNull<Trunk>);
 };
 
 #endif

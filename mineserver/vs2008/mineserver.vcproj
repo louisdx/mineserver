@@ -52,7 +52,7 @@
 				FavorSizeOrSpeed="0"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="../../../include"
-				PreprocessorDefinitions="FADOR_PLUGIN;ZLIB_WINAPI;WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="FADOR_PLUGIN;ZLIB_WINAPI;WIN32;DEBUG;_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
