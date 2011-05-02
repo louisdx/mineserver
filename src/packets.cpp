@@ -480,7 +480,7 @@ int PacketHandler::handshake(User* user)
 	{
 		// Send "no validation or password needed" validation
 		LOG(INFO, "Packets", "Handshake: No validation required for player " + player + ".");
-		user->buffer << (int8_t)eClientToServerPacket_Handshake << std::wstring(L"-");
+		user->buffer << (int8_t)eClientToServerPacket_Handshake << hsttonst(std::wstring(L"-"));
 	}
 	// TODO: Add support for prompting user for Server password (once client supports it)
 
