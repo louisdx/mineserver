@@ -76,10 +76,10 @@ bool Chat::sendUserlist(User* user)
 	return true;
 }
 
-std::deque<std::string> Chat::parseCmd(std::string cmd)
+std::vector<std::string> Chat::parseCmd(std::string cmd)
 {
 	int del;
-	std::deque<std::string> temp;
+	std::vector<std::string> temp;
 
 	while (cmd.length() > 0)
 	{
@@ -162,17 +162,19 @@ bool Chat::handleMsg(User* user, std::string msg)
 
 void Chat::handleCommand(User* user, std::string msg, const std::string& timeStamp)
 {
-	std::deque<std::string> cmd = parseCmd(msg.substr(1));
+	std::vector<std::string> cmd = parseCmd(msg.substr(1));
 
 	if (!cmd.size() || !cmd[0].size())
 	{
 		return;
 	}
 
-	std::string command = cmd[0];
-	cmd.pop_front();
+	//std::string command = cmd[0];
+	//cmd.pop_front();
 
-	char** param = new char *[cmd.size()];
+	boost::scoped_array<char*> param(new char *[cmd.size()]);
+
+	//char** param = new char *[cmd.size()];
 
 	for (uint32_t i = 0; i < cmd.size(); i++)
 	{
@@ -180,18 +182,20 @@ void Chat::handleCommand(User* user, std::string msg, const std::string& timeSta
 	}
 
 	// If hardcoded auth command!
-	if (command == "auth" && param[0] == Mineserver::get()->config()->sData("system.admin.password"))
+	if ((cmd.size()==2)&&
+		(cmd[0] == "auth") && 
+		(cmd[1] == Mineserver::get()->config()->sData("system.admin.password")))
 	{
 		user->serverAdmin = true;
 		msg = MC_COLOR_RED + "[!] " + MC_COLOR_GREEN + "You have been authed as admin!";
 		sendMsg(user, msg, USER);
 	}
 	else
-	{
-		(static_cast<Hook4<bool, const char*, const char*, int, const char**>*>(Mineserver::get()->plugin()->getHook("PlayerChatCommand")))->doAll(user->nick.c_str(), command.c_str(), cmd.size(), (const char**)param);
+	{// unsafe command handling!
+		(static_cast<Hook4<bool, const char*, const char*, int, const char**>*>(Mineserver::get()->plugin()->getHook("PlayerChatCommand")))->doAll(user->nick.c_str(), param[0], cmd.size(), (const char**)&param[0]);
 	}
 
-	delete [] param;
+//	delete [] param;
 
 }
 

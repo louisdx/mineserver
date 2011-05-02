@@ -61,7 +61,7 @@ public:
   void handleCommand(User* user, std::string msg, const std::string& timeStamp);
 
 private:
-  std::deque<std::string> parseCmd(std::string cmd);
+  std::vector<std::string> parseCmd(std::string cmd);
   std::string adminPassword;
 };
 
