@@ -54,7 +54,7 @@ ConfigParser::ConfigParser()
 	m_includes = 0;
 }
 
-bool ConfigParser::parse(const std::string& file, ConfigNode* ptr)
+bool ConfigParser::parse(const std::string& file, NonNull<ConfigNode> ptr)
 {
 	struct stat st;
 	std::ifstream ifs;
@@ -79,11 +79,11 @@ bool ConfigParser::parse(const std::string& file, ConfigNode* ptr)
 	return ret;
 }
 
-bool ConfigParser::parse(const std::istream& data, ConfigNode* ptr)
+bool ConfigParser::parse(const std::istream& data, NonNull<ConfigNode> ptr)
 {
 	std::stack< boost::shared_ptr <std::pair<int, std::string> > > m_tokenStack;
 	ConfigScanner scanner;
-	ConfigNode* root = ptr;
+	ConfigNode* root = ptr.get();
 
 	// that's ugly!
 	std::stringstream ss;

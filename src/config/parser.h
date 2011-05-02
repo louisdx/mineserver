@@ -31,6 +31,8 @@
 #include <string>
 #include <stdint.h>
 
+#include "../util/NonNull.h"
+
 enum
 {
   MAX_FILESIZE = 1*1024*1024,   //!< maximum allowed file size
@@ -62,8 +64,8 @@ public:
   ConfigParser();
 
 public:
-  bool parse(const std::string& file, ConfigNode* ptr);
-  bool parse(const std::istream& data, ConfigNode* ptr);
+  bool parse(const std::string& file, NonNull<ConfigNode> ptr);
+  bool parse(const std::istream& data, NonNull<ConfigNode> ptr);
 
 private:
   uint32_t m_includes;
