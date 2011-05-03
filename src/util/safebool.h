@@ -27,6 +27,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //http://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool
 
+#ifndef SAFEBOOL_H
+#define SAFEBOOL_H
+
 class safe_bool_base {
 public:
 	typedef void (safe_bool_base::*bool_type)() const;
@@ -52,3 +55,4 @@ public:
 protected:
 	~safe_bool() {}
 };
+#endif //SAFEBOOL_H

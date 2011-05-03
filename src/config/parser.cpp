@@ -172,79 +172,80 @@ bool ConfigParser::parse(const std::istream& data, NonNull<ConfigNode> ptr)
 			}
 		}
 
-		if (token_type == CONFIG_TOKEN_BOOLEAN)
-		{
-			ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		// This doesnt make any sense, it needs to be rewritten! TODO BUG HACK
+		//if (token_type == CONFIG_TOKEN_BOOLEAN)
+		//{
+		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
 
-			newNode->setData(token_data == "true");
+		//	newNode->setData(token_data == "true");
 
-			if (token_label.size())
-			{
-				currentNode->set(token_label, newNode, true);
-				token_label.clear();
-			}
-			else
-			{
-				currentNode->add(newNode);
-			}
-		}
+		//	if (token_label.size())
+		//	{
+		//		currentNode->set(token_label, newNode, true);
+		//		token_label.clear();
+		//	}
+		//	else
+		//	{
+		//		currentNode->add(newNode);
+		//	}
+		//}
 
-		if (token_type == CONFIG_TOKEN_STRING)
-		{
-			ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		//if (token_type == CONFIG_TOKEN_STRING)
+		//{
+		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
 
-			newNode->setData(token_data);
+		//	newNode->setData(token_data);
 
-			if (token_label.size())
-			{
-				currentNode->set(token_label, newNode, true);
-				token_label.clear();
-			}
-			else
-			{
-				currentNode->add(newNode);
-			}
-		}
+		//	if (token_label.size())
+		//	{
+		//		currentNode->set(token_label, newNode, true);
+		//		token_label.clear();
+		//	}
+		//	else
+		//	{
+		//		currentNode->add(newNode);
+		//	}
+		//}
 
-		if (token_type == CONFIG_TOKEN_NUMBER)
-		{
-			ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		//if (token_type == CONFIG_TOKEN_NUMBER)
+		//{
+		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
 
-			newNode->setData((double)::atof(token_data.c_str()));
+		//	newNode->setData((double)::atof(token_data.c_str()));
 
-			if (token_label.size())
-			{
-				currentNode->set(token_label, newNode, true);
-				token_label.clear();
-			}
-			else
-			{
-				currentNode->add(newNode);
-			}
-		}
+		//	if (token_label.size())
+		//	{
+		//		currentNode->set(token_label, newNode, true);
+		//		token_label.clear();
+		//	}
+		//	else
+		//	{
+		//		currentNode->add(newNode);
+		//	}
+		//}
 
-		if (token_type == CONFIG_TOKEN_LIST_OPEN)
-		{
-			ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		//if (token_type == CONFIG_TOKEN_LIST_OPEN)
+		//{
+		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
 
-			newNode->setType(CONFIG_NODE_LIST);
+		//	newNode->setType(CONFIG_NODE_LIST);
 
-			if (token_label.size())
-			{
-				currentNode->set(token_label, newNode, true);
+		//	if (token_label.size())
+		//	{
+		//		currentNode->set(token_label, newNode, true);
 
-				newNode = currentNode->get(token_label, true);
+		//		newNode = currentNode->get(token_label, true);
 
-				token_label.clear();
-			}
-			else
-			{
-				currentNode->add(newNode);
-			}
+		//		token_label.clear();
+		//	}
+		//	else
+		//	{
+		//		currentNode->add(newNode);
+		//	}
 
-			nodeStack.push_back(currentNode);
-			currentNode = newNode;
-		}
+		//	nodeStack.push_back(currentNode);
+		//	currentNode = newNode;
+		//}
 
 		if (token_type == CONFIG_TOKEN_LIST_CLOSE)
 		{

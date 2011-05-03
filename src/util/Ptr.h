@@ -24,6 +24,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef PTR_H
+#define PTR_H
 
 //simple pointer wrapper
 #include "safebool.h"
@@ -59,3 +61,4 @@ public:
 private:
 	T* mPtr;
 };
+#endif //PTR_H

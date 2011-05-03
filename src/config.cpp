@@ -144,7 +144,7 @@ int Config::type(const std::string& key) const
 	}
 }
 
-std::list<std::string>* Config::keys(int type)
+std::auto_ptr< std::list<std::string> > Config::keys(int type)
 {
 	return m_root->keys();
 }
