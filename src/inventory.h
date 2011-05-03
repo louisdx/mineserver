@@ -31,6 +31,8 @@
 #include <stdint.h>
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+
 class User;
 
 class Item
@@ -112,12 +114,12 @@ public:
 
     int8_t width;
     int8_t height;
-    std::vector<Item*> slots;
+    std::vector< boost::shared_ptr<Item> > slots;
     Item output;
   };
 
-  std::vector<Recipe*> recipes;
-  bool addRecipe(int width, int height, std::vector<Item*> inputrecipe,
+  std::vector< boost::shared_ptr<Recipe> > recipes;
+  bool addRecipe(int width, int height, std::vector< boost::shared_ptr<Item> > inputrecipe,
                  int outputCount, int16_t outputType, int16_t outputHealth);
   bool readRecipe(std::string recipeFile);
 
@@ -125,13 +127,6 @@ public:
 
   ~Inventory()
   {
-    std::vector<Recipe*>::iterator it_a = recipes.begin();
-    std::vector<Recipe*>::iterator it_b = recipes.end();
-    for (; it_a != it_b; ++it_a)
-    {
-      delete *it_a;
-    }
-    recipes.clear();
   }
 
   // Open chest/workbench/furnace inventories
