@@ -55,7 +55,7 @@ public:
 	double dData(const std::string& name);
 	std::string sData(const std::string& name);
 	bool bData(const std::string& name);
-	ConfigNode* mData(const std::string& name);
+	boost::shared_ptr<ConfigNode> mData(const std::string& name);
 
 	bool has(const std::string& name);
 	int type(const std::string& name) const;
@@ -63,7 +63,7 @@ public:
 
 private:
 	boost::scoped_ptr<ConfigParser> m_parser;
-	boost::scoped_ptr<ConfigNode> m_root;
+	boost::shared_ptr<ConfigNode> m_root;
 };
 
 #endif

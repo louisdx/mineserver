@@ -44,12 +44,12 @@ Config::~Config()
 
 bool Config::load(const std::string& file)
 {
-	return m_parser->parse(file, m_root.get());
+	return m_parser->parse(file, m_root);
 }
 
 bool Config::load(const std::istream& data)
 {
-	return m_parser->parse(data, m_root.get());
+	return m_parser->parse(data, m_root);
 }
 
 void Config::dump()
@@ -117,14 +117,14 @@ std::string Config::sData(const std::string& key)
 	return "";
 }
 
-ConfigNode* Config::mData(const std::string& key)
+boost::shared_ptr<ConfigNode> Config::mData(const std::string& key)
 {
 	if (m_root->has(key))
 	{
 		return m_root->get(key, false);
 	}
 
-	return NULL;
+	return boost::shared_ptr<ConfigNode>();
 }
 
 bool Config::has(const std::string& key)

@@ -205,11 +205,11 @@ bool ConfigNode::has(const std::string& key)
 	}
 }
 
-ConfigNode* ConfigNode::get(const std::string& key, bool createMissing)
+boost::shared_ptr<ConfigNode> ConfigNode::get(const std::string& key, bool createMissing)
 {
 	if (m_type != CONFIG_NODE_LIST)
 	{
-		return NULL;
+		return boost::shared_ptr<ConfigNode>();
 	}
 
 	size_t pos = key.find('.');
@@ -228,7 +228,7 @@ ConfigNode* ConfigNode::get(const std::string& key, bool createMissing)
 		{
 			if (createMissing == false)
 			{
-				return NULL;
+				return boost::shared_ptr<ConfigNode>();
 			}
 			else
 			{
@@ -249,15 +249,15 @@ ConfigNode* ConfigNode::get(const std::string& key, bool createMissing)
 			}
 			else
 			{
-				return NULL;
+				return boost::shared_ptr<ConfigNode>();
 			}
 		}
 
-		return m_list[key].get();
+		return m_list[key];
 	}
 }
 
-bool ConfigNode::set(const std::string& key, std::auto_ptr<ConfigNode> ptr, bool createMissing)
+bool ConfigNode::set(const std::string& key, boost::shared_ptr<ConfigNode> ptr, bool createMissing)
 {
 	m_type = CONFIG_NODE_LIST;
 
@@ -290,7 +290,7 @@ bool ConfigNode::set(const std::string& key, std::auto_ptr<ConfigNode> ptr, bool
 	}
 }
 
-bool ConfigNode::add(std::auto_ptr<ConfigNode> ptr)
+bool ConfigNode::add(boost::shared_ptr<ConfigNode> ptr)
 {
 	std::string key;
 	std::stringstream ss;

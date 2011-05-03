@@ -62,9 +62,9 @@ public:
 	int type() const;
 	void setType(int type);
 	bool has(const std::string& key);
-	ConfigNode* get(const std::string& key, bool createMissing = true);
-	bool set(const std::string& key, std::auto_ptr<ConfigNode> ptr, bool createMissing = true);
-	bool add(std::auto_ptr<ConfigNode> ptr);
+	boost::shared_ptr<ConfigNode> get(const std::string& key, bool createMissing = true);
+	bool set(const std::string& key, boost::shared_ptr<ConfigNode> ptr, bool createMissing = true);
+	bool add(boost::shared_ptr<ConfigNode> ptr);
 	void clear();
 	void dump(int indent) const;
 	void dump() const

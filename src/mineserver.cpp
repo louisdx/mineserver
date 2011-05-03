@@ -295,7 +295,7 @@ bool Mineserver::init()
 	};
 	for (size_t i = 0; i < sizeof(vars) / sizeof(vars[0]); i++)
 	{
-		ConfigNode* node = config()->mData(vars[i]);
+		boost::shared_ptr<ConfigNode> node = config()->mData(vars[i]);
 		if (!node)
 		{
 			LOG2(ERROR, std::string("Variable is missing: ") + vars[i]);

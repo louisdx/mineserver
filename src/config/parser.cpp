@@ -54,7 +54,7 @@ ConfigParser::ConfigParser()
 	m_includes = 0;
 }
 
-bool ConfigParser::parse(const std::string& file, NonNull<ConfigNode> ptr)
+bool ConfigParser::parse(const std::string& file, boost::shared_ptr<ConfigNode> ptr)
 {
 	struct stat st;
 	std::ifstream ifs;
@@ -79,11 +79,11 @@ bool ConfigParser::parse(const std::string& file, NonNull<ConfigNode> ptr)
 	return ret;
 }
 
-bool ConfigParser::parse(const std::istream& data, NonNull<ConfigNode> ptr)
+bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode> ptr)
 {
 	std::stack< boost::shared_ptr <std::pair<int, std::string> > > m_tokenStack;
 	ConfigScanner scanner;
-	ConfigNode* root = ptr.get();
+	boost::shared_ptr<ConfigNode> root = ptr;
 
 	// that's ugly!
 	std::stringstream ss;
@@ -98,8 +98,8 @@ bool ConfigParser::parse(const std::istream& data, NonNull<ConfigNode> ptr)
 	int token_type;
 	std::string token_data;
 	std::string token_label;
-	std::deque<ConfigNode*> nodeStack;
-	ConfigNode* currentNode = root;
+	std::deque< boost::shared_ptr<ConfigNode> > nodeStack;
+	boost::shared_ptr<ConfigNode> currentNode = root;
 	nodeStack.push_back(currentNode);
 	while (get_token(&scanner,&m_tokenStack,&token_type, &token_data))
 	{
@@ -134,7 +134,7 @@ bool ConfigParser::parse(const std::istream& data, NonNull<ConfigNode> ptr)
 
 				// prepend home path
 				const std::string var  = "system.path.home";
-				ConfigNode*       node = root->get(var, false);
+				boost::shared_ptr<ConfigNode>     node = root->get(var, false);
 				std::string       home;
 				if (!node || (home = node->sData()).empty())
 				{
@@ -173,79 +173,79 @@ bool ConfigParser::parse(const std::istream& data, NonNull<ConfigNode> ptr)
 		}
 
 		// This doesnt make any sense, it needs to be rewritten! TODO BUG HACK
-		//if (token_type == CONFIG_TOKEN_BOOLEAN)
-		//{
-		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		if (token_type == CONFIG_TOKEN_BOOLEAN)
+		{
+			boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
 
-		//	newNode->setData(token_data == "true");
+			newNode->setData(token_data == "true");
 
-		//	if (token_label.size())
-		//	{
-		//		currentNode->set(token_label, newNode, true);
-		//		token_label.clear();
-		//	}
-		//	else
-		//	{
-		//		currentNode->add(newNode);
-		//	}
-		//}
+			if (token_label.size())
+			{
+				currentNode->set(token_label, newNode, true);
+				token_label.clear();
+			}
+			else
+			{
+				currentNode->add(newNode);
+			}
+		}
 
-		//if (token_type == CONFIG_TOKEN_STRING)
-		//{
-		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		if (token_type == CONFIG_TOKEN_STRING)
+		{
+			boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
 
-		//	newNode->setData(token_data);
+			newNode->setData(token_data);
 
-		//	if (token_label.size())
-		//	{
-		//		currentNode->set(token_label, newNode, true);
-		//		token_label.clear();
-		//	}
-		//	else
-		//	{
-		//		currentNode->add(newNode);
-		//	}
-		//}
+			if (token_label.size())
+			{
+				currentNode->set(token_label, newNode, true);
+				token_label.clear();
+			}
+			else
+			{
+				currentNode->add(newNode);
+			}
+		}
 
-		//if (token_type == CONFIG_TOKEN_NUMBER)
-		//{
-		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		if (token_type == CONFIG_TOKEN_NUMBER)
+		{
+			boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
 
-		//	newNode->setData((double)::atof(token_data.c_str()));
+			newNode->setData((double)::atof(token_data.c_str()));
 
-		//	if (token_label.size())
-		//	{
-		//		currentNode->set(token_label, newNode, true);
-		//		token_label.clear();
-		//	}
-		//	else
-		//	{
-		//		currentNode->add(newNode);
-		//	}
-		//}
+			if (token_label.size())
+			{
+				currentNode->set(token_label, newNode, true);
+				token_label.clear();
+			}
+			else
+			{
+				currentNode->add(newNode);
+			}
+		}
 
-		//if (token_type == CONFIG_TOKEN_LIST_OPEN)
-		//{
-		//	ConfigNode* newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : new ConfigNode;
+		if (token_type == CONFIG_TOKEN_LIST_OPEN)
+		{
+			boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
 
-		//	newNode->setType(CONFIG_NODE_LIST);
+			newNode->setType(CONFIG_NODE_LIST);
 
-		//	if (token_label.size())
-		//	{
-		//		currentNode->set(token_label, newNode, true);
+			if (token_label.size())
+			{
+				currentNode->set(token_label, newNode, true);
 
-		//		newNode = currentNode->get(token_label, true);
+				newNode = currentNode->get(token_label, true);
 
-		//		token_label.clear();
-		//	}
-		//	else
-		//	{
-		//		currentNode->add(newNode);
-		//	}
+				token_label.clear();
+			}
+			else
+			{
+				currentNode->add(newNode);
+			}
 
-		//	nodeStack.push_back(currentNode);
-		//	currentNode = newNode;
-		//}
+			nodeStack.push_back(currentNode);
+			currentNode = newNode;
+		}
 
 		if (token_type == CONFIG_TOKEN_LIST_CLOSE)
 		{
