@@ -73,6 +73,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "items/itembasic.h"
 #include "mob.h"
 
+#include <boost/scoped_array.hpp>
+
 #ifdef WIN32
 #define M_PI 3.141592653589793238462643
 #endif
@@ -377,19 +379,19 @@ int PacketHandler::login_request(User* user)
 			#endif
 
 			#define BUFFER_SIZE 1024
-			char* buffer = new char[BUFFER_SIZE];
+			boost::scoped_array<char> buffer(new char[BUFFER_SIZE]);
+			memset(buffer.get(),0,BUFFER_SIZE);
 			std::string stringbuffer;
 
 			#ifdef WIN32
-			while (int received = recv(fd, buffer, BUFFER_SIZE - 1, NULL) != 0)
+			while (int received = recv(fd, buffer.get(), BUFFER_SIZE - 1, NULL) != 0)
 			{
 			#else
-			while (read(fd, buffer, BUFFER_SIZE - 1) != 0)
+			while (read(fd, buffer.get(), BUFFER_SIZE - 1) != 0)
 			{
 			#endif
-				stringbuffer += std::string(buffer);
+				stringbuffer += std::string(buffer.get());
 			}
-			delete [] buffer;
 			#ifdef WIN32
 			closesocket(fd);
 			#else
