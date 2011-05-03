@@ -274,8 +274,6 @@ m_mobs          (NULL)
 
 Mineserver::~Mineserver()
 {
-	freeConstants();
-
 	delete m_logger;
 	delete m_screen;
 	delete m_config;
