@@ -52,6 +52,7 @@
 #include "nbt.h"
 #include "constants.h"
 
+#include <boost/scoped_array.hpp>
 
 
 //NBT level file reading
@@ -556,22 +557,19 @@ NBT_Value* NBT_Value::LoadFromFile(const std::string& filename)
     uncompressedSize = ALLOCATE_NBTFILE * 10;
   }
 
-  uint8_t* uncompressedData = new uint8_t[uncompressedSize];
+  boost::scoped_array<uint8_t> uncompressedData(new uint8_t[uncompressedSize]);
   gzFile nbtFile = gzopen(filename.c_str(), "rb");
   if (nbtFile == NULL)
   {
-    delete[] uncompressedData;
     return NULL;
   }
-  gzread(nbtFile, uncompressedData, uncompressedSize);
+  gzread(nbtFile, uncompressedData.get(), uncompressedSize);
   gzclose(nbtFile);
 
-  uint8_t* ptr = uncompressedData + 3; // Jump blank compound
+  uint8_t* ptr = uncompressedData.get() + 3; // Jump blank compound
   int remaining = uncompressedSize;
 
   NBT_Value* root = new NBT_Value(TAG_COMPOUND, &ptr, remaining);
-
-  delete[] uncompressedData;
 
   return root;
 }
@@ -594,10 +592,10 @@ NBT_Value* NBT_Value::LoadFromMemory(uint8_t* buffer, uint32_t len)
   inflateInit(&zstream);
 
   uint32_t uncompressedSize   = ALLOCATE_NBTFILE * 10;
-  uint8_t* uncompressedBuffer = new uint8_t[uncompressedSize];
+  boost::scoped_array<uint8_t> uncompressedBuffer(new uint8_t[uncompressedSize]);
 
   zstream.avail_out = uncompressedSize;
-  zstream.next_out = uncompressedBuffer;
+  zstream.next_out = uncompressedBuffer.get();
 
   //Uncompress
   int returnvalue = 0;
@@ -605,18 +603,15 @@ NBT_Value* NBT_Value::LoadFromMemory(uint8_t* buffer, uint32_t len)
   {
 
     std::cout << "Error in inflate! " << returnvalue << std::endl;
-    delete[] uncompressedBuffer;
     return NULL;
   }
 
   inflateEnd(&zstream);
 
-  uint8_t* ptr = uncompressedBuffer + 3; // Jump blank compound
+  uint8_t* ptr = uncompressedBuffer.get() + 3; // Jump blank compound
   int remaining = uncompressedSize;
 
   NBT_Value* root = new NBT_Value(TAG_COMPOUND, &ptr, remaining);
-
-  delete[] uncompressedBuffer;
 
   return root;
 }
