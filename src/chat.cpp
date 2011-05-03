@@ -169,12 +169,7 @@ void Chat::handleCommand(User* user, std::string msg, const std::string& timeSta
 		return;
 	}
 
-	//std::string command = cmd[0];
-	//cmd.pop_front();
-
 	boost::scoped_array<char*> param(new char *[cmd.size()]);
-
-	//char** param = new char *[cmd.size()];
 
 	for (uint32_t i = 0; i < cmd.size(); i++)
 	{
@@ -191,12 +186,9 @@ void Chat::handleCommand(User* user, std::string msg, const std::string& timeSta
 		sendMsg(user, msg, USER);
 	}
 	else
-	{// unsafe command handling!
+	{
 		(static_cast<Hook4<bool, const char*, const char*, int, const char**>*>(Mineserver::get()->plugin()->getHook("PlayerChatCommand")))->doAll(user->nick.c_str(), param[0], cmd.size(), (const char**)&param[0]);
 	}
-
-//	delete [] param;
-
 }
 
 
