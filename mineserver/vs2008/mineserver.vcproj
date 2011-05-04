@@ -300,6 +300,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\mineserver.inl"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\mob.cpp"
 				>
 			</File>

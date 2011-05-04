@@ -205,8 +205,7 @@ int main(int argc, char* argv[])
 	}
 
 	// load config
-	Config* config = Mineserver::get()->config();
-	if (!config->load(cfg))
+	if (!Mineserver::get()->config()->load(cfg))
 	{
 		return EXIT_FAILURE;
 	}
@@ -222,7 +221,7 @@ int main(int argc, char* argv[])
 			override_config << overrides[i] << ';' << std::endl;
 		}
 		// override config
-		if (!config->load(override_config))
+		if (!Mineserver::get()->config()->load(override_config))
 		{
 			LOG2(ERROR, "Error when parsing overrides: maybe you forgot to doublequote string values?");
 			return EXIT_FAILURE;
@@ -257,9 +256,9 @@ m_running       (false),
 m_eventBase     (NULL),
 
 // core modules
-m_config        (new Config),
-m_screen        (new CliScreen),
-m_logger        (new Logger),
+m_config        (new Config()),
+m_screen        (new CliScreen()),
+m_logger        (new Logger()),
 
 m_plugin        (NULL),
 m_chat          (NULL),
@@ -274,9 +273,6 @@ m_mobs          (NULL)
 
 Mineserver::~Mineserver()
 {
-	delete m_logger;
-	delete m_screen;
-	delete m_config;
 }
 
 
@@ -422,7 +418,7 @@ bool Mineserver::free()
 	LOG2(INFO, "Shutting down...");
 
 	// Close the cli session if its in use
-	if (config() && config()->bData("system.interface.use_cli"))
+	if (config()->bData("system.interface.use_cli"))
 	{
 		screen()->end();
 	}
@@ -869,7 +865,7 @@ bool Mineserver::homePrepare(const std::string& path)
 	return true;
 }
 
-Map* Mineserver::map(size_t n) const
+Map* Mineserver::map(size_t n)
 {
 	if (n < m_map.size())
 	{
@@ -877,4 +873,22 @@ Map* Mineserver::map(size_t n) const
 	}
 	LOG2(WARNING, "Nonexistent map requested. Map 0 passed");
 	return m_map[0];
+}
+
+Mineserver* Mineserver::get()
+{
+	static Mineserver* m_instance = NULL;
+
+	if (!m_instance)
+	{
+		m_instance = new Mineserver;
+	}
+
+	return m_instance;
+}
+
+uint32_t Mineserver::generateEID()
+{
+	static uint32_t m_EID = 0;
+	return ++m_EID;
 }
