@@ -100,11 +100,11 @@ public:
 	inline NonNull<Mobs> mobs();
 	inline NonNull<Plugin> plugin();
 	inline NonNull<Screen> screen();
-	inline Physics* physics(size_t n);
+	inline NonNull<Physics> physics(size_t n);
 	inline NonNull<Config> config();
 	inline NonNull<FurnaceManager> furnaceManager();
 	inline NonNull<PacketHandler> packetHandler();
-	inline MapGen* mapGen(size_t n);
+	inline NonNull<MapGen> mapGen(size_t n);
 	inline NonNull<Inventory> inventory();
 
 	void saveAllPlayers();

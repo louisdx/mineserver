@@ -50,7 +50,7 @@ inline NonNull<Screen> Mineserver::screen()
 	return m_screen.get();
 }
 
-inline Physics* Mineserver::physics(size_t n) 
+inline NonNull<Physics> Mineserver::physics(size_t n) 
 {
 	assert(n<mWorlds.size());
 	return mWorlds[n]->m_physics.get();
@@ -71,7 +71,7 @@ inline NonNull<PacketHandler> Mineserver::packetHandler()
 	return m_packetHandler.get();
 }
 
-inline MapGen* Mineserver::mapGen(size_t n) 
+inline NonNull<MapGen> Mineserver::mapGen(size_t n) 
 {
 	assert(n<mWorlds.size());
 	return mWorlds[n]->m_mapGen.get();
