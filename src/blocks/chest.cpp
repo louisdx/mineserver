@@ -107,11 +107,11 @@ void BlockChest::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y
 
               if (locked == 1)
               {
-                Mineserver::get()->chat()->sendMsg(user, MC_COLOR_RED + "Chest locked", Chat::USER);
+                Chat::sendMsg(user, MC_COLOR_RED + "Chest locked", Chat::USER);
               }
               else
               {
-                Mineserver::get()->chat()->sendMsg(user, MC_COLOR_RED + "Chest opened", Chat::USER);
+                Chat::sendMsg(user, MC_COLOR_RED + "Chest opened", Chat::USER);
               }
 
             }

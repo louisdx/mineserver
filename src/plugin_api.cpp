@@ -248,7 +248,7 @@ bool chat_sendUserlist(const char* user)
   User* userPtr = userFromName(userStr);
   if (userPtr != NULL)
   {
-    Mineserver::get()->chat()->sendUserlist(userPtr);
+    Chat::sendUserlist(userPtr);
     return true;
   }
   return false;
@@ -261,14 +261,14 @@ bool chat_handleMessage(const char* username, const char* message)
     User serverUser(-1, SERVER_CONSOLE_UID);
     serverUser.changeNick("[Server]");
 
-    Mineserver::get()->chat()->handleMsg(&serverUser, message);
+    Chat::handleMsg(&serverUser, message);
   }
   else
   {
     User* user = userFromName(std::string(username));
     if (user != NULL)
     {
-      Mineserver::get()->chat()->handleMsg(user, message);
+      Chat::handleMsg(user, message);
     }
   }
   return false;

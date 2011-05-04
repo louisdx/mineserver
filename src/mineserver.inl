@@ -35,11 +35,6 @@ inline size_t Mineserver::mapCount()
 	return mWorlds.size();
 }
 
-inline NonNull<Chat> Mineserver::chat() 
-{
-	return m_chat.get();
-}
-
 inline NonNull<Mobs> Mineserver::mobs() 
 {
 	return m_mobs.get();

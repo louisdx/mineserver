@@ -66,7 +66,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "tools.h"
 #include "map.h"
 #include "user.h"
-#include "chat.h"
 #include "worldgen/mapgen.h"
 #include "worldgen/nethergen.h"
 #include "worldgen/heavengen.h"
@@ -260,7 +259,6 @@ m_config        (new Config()),
 m_screen        (new CliScreen()),
 
 m_plugin        (NULL),
-m_chat          (NULL),
 m_furnaceManager(NULL),
 m_packetHandler (NULL),
 m_inventory     (NULL),
@@ -423,7 +421,6 @@ bool Mineserver::init()
 		return false;
 	}
 
-	m_chat.reset(            new Chat());
 	m_furnaceManager.reset(   new FurnaceManager());
 	m_packetHandler.reset(    new PacketHandler());
 	m_inventory.reset(        new Inventory(m_config->sData("system.path.data") + '/' + "recipes", ".recipe", "ENABLED_RECIPES.cfg"));

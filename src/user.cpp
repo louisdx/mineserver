@@ -166,7 +166,7 @@ User::~User()
       }
     }
 
-    Mineserver::get()->chat()->sendMsg(this, this->nick + " disconnected!", Chat::OTHERS);
+    Chat::sendMsg(this, this->nick + " disconnected!", Chat::OTHERS);
     //LOG2(WARNING, this->nick + " removed!");
     this->saveData();
 
@@ -278,7 +278,7 @@ bool User::sendLoginInfo()
   }
 
   // Teleport player (again)
-  Mineserver::get()->chat()->sendMsg(this, nick + " connected!", Chat::ALL);
+  Chat::sendMsg(this, nick + " connected!", Chat::ALL);
 
   teleport(pos.x, pos.y + 2, pos.z);
 
@@ -312,7 +312,7 @@ bool User::mute(std::string muteMsg)
     muteMsg = MC_COLOR_YELLOW + "You have been muted. ";
   }
 
-  Mineserver::get()->chat()->sendMsg(this, muteMsg, Chat::USER);
+  Chat::sendMsg(this, muteMsg, Chat::USER);
   this->muted = true;
   LOG2(WARNING, nick + " muted. Reason: " + muteMsg);
   return true;
@@ -320,7 +320,7 @@ bool User::mute(std::string muteMsg)
 
 bool User::unmute()
 {
-  Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "You have been unmuted.", Chat::USER);
+  Chat::sendMsg(this, MC_COLOR_YELLOW + "You have been unmuted.", Chat::USER);
   this->muted = false;
   LOG2(WARNING, nick + " unmuted.");
   return true;
@@ -330,17 +330,17 @@ bool User::toggleDND()
 {
   if (!this->dnd)
   {
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "You have enabled 'Do Not Disturb' mode.", Chat::USER);
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "You will no longer see chat or private messages.", Chat::USER);
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "Type /dnd again to disable 'Do Not Disturb' mode.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "You have enabled 'Do Not Disturb' mode.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "You will no longer see chat or private messages.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "Type /dnd again to disable 'Do Not Disturb' mode.", Chat::USER);
     this->dnd = true;
   }
   else
   {
     this->dnd = false;
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "You have disabled 'Do Not Disturb' mode.", Chat::USER);
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "You can now see chat and private messages.", Chat::USER);
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "Type /dnd again to enable 'Do Not Disturb' mode.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "You have disabled 'Do Not Disturb' mode.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "You can now see chat and private messages.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "Type /dnd again to enable 'Do Not Disturb' mode.", Chat::USER);
   }
   return this->dnd;
 }
@@ -355,13 +355,13 @@ bool User::isAbleToCommunicate(std::string communicateCommand)
 
   if (this->muted)
   {
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "You cannot " + communicateCommand + " while muted.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "You cannot " + communicateCommand + " while muted.", Chat::USER);
     return false;
   }
   if (this->dnd)
   {
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "You cannot " + communicateCommand + " while in 'Do Not Disturb' mode.", Chat::USER);
-    Mineserver::get()->chat()->sendMsg(this, MC_COLOR_YELLOW + "Type /dnd to disable.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "You cannot " + communicateCommand + " while in 'Do Not Disturb' mode.", Chat::USER);
+    Chat::sendMsg(this, MC_COLOR_YELLOW + "Type /dnd to disable.", Chat::USER);
     return false;
   }
   return true;

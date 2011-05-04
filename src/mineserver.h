@@ -48,7 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class User;
 class Map;
-class Chat;
 class Plugin;
 class Screen;
 class Config;
@@ -98,7 +97,6 @@ public:
 
 	inline Ptr<Map> map(size_t n);
 	inline size_t mapCount();
-	inline NonNull<Chat> chat();
 	inline NonNull<Mobs> mobs();
 	inline NonNull<Plugin> plugin();
 	inline NonNull<Screen> screen();
@@ -139,7 +137,6 @@ private:
 	boost::scoped_ptr<Screen> m_screen;
 
 	boost::scoped_ptr<Plugin>         m_plugin;
-	boost::scoped_ptr<Chat>           m_chat;
 	boost::scoped_ptr<FurnaceManager> m_furnaceManager;
 	boost::scoped_ptr<PacketHandler>  m_packetHandler;
 	boost::scoped_ptr<Inventory>      m_inventory;

@@ -508,7 +508,7 @@ int PacketHandler::chat_message(User* user)
 
 	user->buffer.removePacket();
 
-	Mineserver::get()->chat()->handleMsg(user, msg);
+	Chat::handleMsg(user, msg);
 
 	return PACKET_OK;
 }

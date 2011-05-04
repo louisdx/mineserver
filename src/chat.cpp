@@ -44,17 +44,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using std::min;
 
-Chat::Chat()
-{
-}
-
-Chat::~Chat()
-{
-}
+std::vector<std::string> parseCmd(std::string cmd);
 
 bool Chat::sendUserlist(User* user)
 {
-	this->sendMsg(user, MC_COLOR_BLUE + "[ " + dtos(User::all().size()) + " / " + dtos(Mineserver::get()->config()->iData("system.user_limit")) + " players online ]", USER);
+	sendMsg(user, MC_COLOR_BLUE + "[ " + dtos(User::all().size()) + " / " + dtos(Mineserver::get()->config()->iData("system.user_limit")) + " players online ]", USER);
 	std::string playerDesc;
 	for (unsigned int i = 0; i < User::all().size(); i++)
 	{
@@ -73,12 +67,12 @@ bool Chat::sendUserlist(User* user)
 		}
 		playerDesc += ", ";
 	}
-	this->sendMsg(user, playerDesc, USER);
+	sendMsg(user, playerDesc, USER);
 
 	return true;
 }
 
-std::vector<std::string> Chat::parseCmd(std::string cmd)
+std::vector<std::string> parseCmd(std::string cmd)
 {
 	int del;
 	std::vector<std::string> temp;
@@ -199,14 +193,14 @@ void Chat::handleServerMsg(User* user, std::string msg, const std::string& timeS
 	// Decorate server message
 	LOG2(INFO, "[!] " + msg.substr(1));
 	msg = MC_COLOR_RED + "[!] " + MC_COLOR_GREEN + msg.substr(1);
-	this->sendMsg(user, msg, ALL);
+	sendMsg(user, msg, ALL);
 }
 
 void Chat::handleAdminChatMsg(User* user, std::string msg, const std::string& timeStamp)
 {
 	LOG2(INFO, "[@] <" + user->nick + "> " + msg.substr(1));
 	msg = timeStamp +  MC_COLOR_RED + " [@]" + MC_COLOR_WHITE + " <" + MC_COLOR_DARK_MAGENTA + user->nick + MC_COLOR_WHITE + "> " + msg.substr(1);
-	this->sendMsg(user, msg, ADMINS);
+	sendMsg(user, msg, ADMINS);
 }
 
 void Chat::handleChatMsg(User* user, std::string msg, const std::string& timeStamp)
@@ -233,7 +227,7 @@ void Chat::handleChatMsg(User* user, std::string msg, const std::string& timeSta
 		msg = timeStamp + " <" + user->nick + "> " + msg;
 	}
 
-	this->sendMsg(user, msg, ALL);
+	sendMsg(user, msg, ALL);
 }
 
 bool Chat::sendMsg(User* user, std::string msg, MessageTarget action)

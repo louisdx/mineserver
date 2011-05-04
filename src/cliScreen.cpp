@@ -142,7 +142,7 @@ bool CliScreen::CheckForCommand()
     // Now handle this command as normal
     User serverUser(-1, SERVER_CONSOLE_UID);
     serverUser.changeNick("[Server]");
-    Mineserver::get()->chat()->handleMsg(&serverUser, Mineserver::get()->screen()->getCommand());
+	Chat::handleMsg(&serverUser, Mineserver::get()->screen()->getCommand());
   }
 
   return false;

@@ -33,9 +33,8 @@
 
 class User;
 
-class Chat
+namespace Chat
 {
-public:
   enum MessageTarget
   {
     ALL,
@@ -45,9 +44,6 @@ public:
     OPS,
     GUESTS
   };
-
-  Chat();
-  ~Chat();
 
   bool handleMsg(User* user, std::string msg);
   void handleServerMsg(User* user, std::string msg, const std::string& timeStamp);
@@ -59,10 +55,6 @@ public:
   void sendHelp(User* user, std::deque<std::string> args);
 
   void handleCommand(User* user, std::string msg, const std::string& timeStamp);
-
-private:
-  std::vector<std::string> parseCmd(std::string cmd);
-  std::string adminPassword;
 };
 
 #endif
