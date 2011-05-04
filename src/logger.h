@@ -36,11 +36,10 @@
 #include "logtype.h"
 #include "tools.h"
 
-class Logger
+namespace Logger
 {
-public:
-  static void log(const std::string& message, const std::string& file, int line);
-  static void log(LogType::LogType type, const std::string& source, const std::string& message);
+  void log(const std::string& message, const std::string& file, int line);
+  void log(LogType::LogType type, const std::string& source, const std::string& message);
 
 };
 
