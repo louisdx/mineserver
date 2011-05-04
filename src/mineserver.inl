@@ -37,17 +37,17 @@ inline size_t Mineserver::mapCount()
 
 inline NonNull<Chat> Mineserver::chat() 
 {
-	return m_chat;
+	return m_chat.get();
 }
 
 inline NonNull<Mobs> Mineserver::mobs() 
 {
-	return m_mobs;
+	return m_mobs.get();
 }
 
 inline NonNull<Plugin> Mineserver::plugin() 
 {
-	return m_plugin;
+	return m_plugin.get();
 }
 
 inline NonNull<Screen> Mineserver::screen() 
@@ -67,12 +67,12 @@ inline NonNull<Config> Mineserver::config()
 
 inline NonNull<FurnaceManager> Mineserver::furnaceManager() 
 {
-	return m_furnaceManager;
+	return m_furnaceManager.get();
 }
 
 inline NonNull<PacketHandler> Mineserver::packetHandler() 
 {
-	return m_packetHandler;
+	return m_packetHandler.get();
 }
 
 inline MapGen* Mineserver::mapGen(size_t n) 
@@ -82,7 +82,7 @@ inline MapGen* Mineserver::mapGen(size_t n)
 
 inline NonNull<Inventory> Mineserver::inventory() 
 {
-	return m_inventory;
+	return m_inventory.get();
 }
 
 inline Ptr<Map> Mineserver::map(size_t n)

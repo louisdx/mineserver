@@ -133,12 +133,12 @@ private:
 	boost::scoped_ptr<Config> m_config;
 	boost::scoped_ptr<Screen> m_screen;
 
-	Plugin*         m_plugin;
-	Chat*           m_chat;
-	FurnaceManager* m_furnaceManager;
-	PacketHandler*  m_packetHandler;
-	Inventory*      m_inventory;
-	Mobs*           m_mobs;
+	boost::scoped_ptr<Plugin>         m_plugin;
+	boost::scoped_ptr<Chat>           m_chat;
+	boost::scoped_ptr<FurnaceManager> m_furnaceManager;
+	boost::scoped_ptr<PacketHandler>  m_packetHandler;
+	boost::scoped_ptr<Inventory>      m_inventory;
+	boost::scoped_ptr<Mobs>           m_mobs;
 };
 
 #include "mineserver.inl"

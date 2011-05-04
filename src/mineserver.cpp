@@ -336,7 +336,7 @@ bool Mineserver::init()
 
 
 	// screen::init() needs m_plugin
-	m_plugin = new Plugin;
+	m_plugin.reset(new Plugin);
 
 	init_plugin_api();
 
@@ -402,11 +402,11 @@ bool Mineserver::init()
 		return false;
 	}
 
-	m_chat           = new Chat;
-	m_furnaceManager = new FurnaceManager;
-	m_packetHandler  = new PacketHandler;
-	m_inventory      = new Inventory(m_config->sData("system.path.data") + '/' + "recipes", ".recipe", "ENABLED_RECIPES.cfg");
-	m_mobs           = new Mobs;
+	m_chat.reset(            new Chat());
+	m_furnaceManager.reset(   new FurnaceManager());
+	m_packetHandler.reset(    new PacketHandler());
+	m_inventory.reset(        new Inventory(m_config->sData("system.path.data") + '/' + "recipes", ".recipe", "ENABLED_RECIPES.cfg"));
+	m_mobs.reset(             new Mobs());
 
 	return true;
 }
@@ -428,18 +428,6 @@ bool Mineserver::free()
 		delete m_map[i];
 		delete m_physics[i];
 		delete m_mapGen[i];
-	}
-
-	delete m_chat;
-	delete m_furnaceManager;
-	delete m_packetHandler;
-	delete m_inventory;
-	delete m_mobs;
-
-	if (m_plugin)
-	{
-		delete m_plugin;
-		m_plugin = NULL;
 	}
 
 	// Remove the PID file
