@@ -495,14 +495,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\blocks\default.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\src\blocks\default.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\src\blocks\door.cpp"
 					>
 				</File>

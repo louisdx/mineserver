@@ -68,7 +68,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "tools.h"
 #include "user.h"
 #include "blocks/basic.h"
-#include "blocks/default.h"
+//#include "blocks/default.h"
 #include "blocks/note.h"
 #include "items/itembasic.h"
 #include "mob.h"
@@ -596,7 +596,7 @@ int PacketHandler::player_digging(User* user)
 	uint8_t block;
 	uint8_t meta;
 	BlockBasic* blockcb;
-	BlockDefault blockD;
+	BlockBasic blockD;
 
 
 	user->buffer >> status >> x >> y >> z >> direction;
@@ -847,7 +847,7 @@ int PacketHandler::player_block_placement(User* user)
 	int8_t count  = 0;
 	int16_t health = 0;
 	BlockBasic* blockcb;
-	BlockDefault blockD;
+	BlockBasic blockD;
 
 
 	user->buffer >> x >> y >> z >> direction >> newblock;

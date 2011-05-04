@@ -82,15 +82,6 @@ void BlockDoor::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y,
   }
 }
 
-void BlockDoor::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockDoor::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
 bool BlockDoor::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   // get block info
@@ -242,14 +233,6 @@ bool BlockDoor::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32
   Mineserver::get()->map(map)->setBlock(x, y + 1, z, (char)newblock, direction);
   Mineserver::get()->map(map)->sendBlockChange(x, y + 1, z, (char)newblock, direction);
   return false;
-}
-
-void BlockDoor::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockDoor::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
 }
 
 bool BlockDoor::onInteract(User* user, int32_t x, int8_t y, int32_t z, int map)

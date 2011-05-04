@@ -52,7 +52,7 @@ bool BlockLeaves::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32
       decaying.erase(decaying.begin() + i);
     }
   }
-  return true;
+  return BlockBasic::onBroken(user, status, x, y, z, map, direction);
 }
 
 void BlockLeaves::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)

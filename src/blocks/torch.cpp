@@ -42,34 +42,6 @@ bool BlockTorch::affectedBlock(int block)
   return false;
 }
 
-
-void BlockTorch::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockTorch::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockTorch::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-bool BlockTorch::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  uint8_t block, meta;
-  Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta);
-
-  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
-
-  this->spawnBlockItem(x, y, z, map, block, 0);
-  return false;
-}
-
 void BlockTorch::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   uint8_t block;
@@ -152,10 +124,6 @@ bool BlockTorch::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int3
   Mineserver::get()->map(map)->setBlock(x, y, z, (char)newblock, direction);
   Mineserver::get()->map(map)->sendBlockChange(x, y, z, (char)newblock, direction);
   return false;
-}
-
-void BlockTorch::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
 }
 
 void BlockTorch::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)

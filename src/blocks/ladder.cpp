@@ -40,36 +40,6 @@ bool BlockLadder::affectedBlock(int block)
   return false;
 }
 
-
-void BlockLadder::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockLadder::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockLadder::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-bool BlockLadder::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  uint8_t block;
-  uint8_t meta;
-
-  if (!Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta))
-  {
-    revertBlock(user, x, y, z, map);
-    return true;
-  }
-
-  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
-  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  this->spawnBlockItem(x, y, z, map, block);
-  return false;
-}
-
 void BlockLadder::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   uint8_t block, meta;
@@ -159,10 +129,6 @@ bool BlockLadder::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int
   return false;
 }
 
-void BlockLadder::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
 void BlockLadder::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   uint8_t oldblock;
@@ -177,8 +143,3 @@ void BlockLadder::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, i
   Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
   Mineserver::get()->map(map)->createPickupSpawn(x, y, z, oldblock, 1, 0, NULL);
 }
-
-void BlockLadder::onNeighbourMove(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-

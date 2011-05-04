@@ -41,39 +41,6 @@ bool BlockStair::affectedBlock(int block)
   return false;
 }
 
-
-void BlockStair::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockStair::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockStair::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-bool BlockStair::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  uint8_t block, meta;
-  Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta);
-
-  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
-
-  this->spawnBlockItem(x, y, z, map, block, 0);
-  return false;
-}
-
-void BlockStair::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  /* TODO: add code to align stairs? */
-}
-
 bool BlockStair::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   //*if (!this->translateDirection(&x, &y, &z, map, direction))
@@ -124,13 +91,4 @@ bool BlockStair::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int3
   Mineserver::get()->map(map)->sendBlockChange(x, y, z, newblock, direction);
 
   return false;
-}
-
-void BlockStair::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  /* Align neighbour to this stair */
-}
-
-void BlockStair::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
 }
