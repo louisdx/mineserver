@@ -349,17 +349,6 @@ bool Mineserver::init()
 
 	LOG2(INFO, "Welcome to Mineserver v" + VERSION);
 
-	MapGen* mapgen = new MapGen;
-	MapGen* nethergen = new NetherGen;
-	MapGen* heavengen = new HeavenGen;
-	MapGen* biomegen = new BiomeGen;
-	MapGen* eximgen = new EximGen;
-	m_mapGenNames.push_back(mapgen);
-	m_mapGenNames.push_back(nethergen);
-	m_mapGenNames.push_back(heavengen);
-	m_mapGenNames.push_back(biomegen);
-	m_mapGenNames.push_back(eximgen);
-
 	m_saveInterval = m_config->iData("map.save_interval");
 
 	m_only_helmets = m_config->bData("system.armour.helmet_strict");
@@ -373,20 +362,52 @@ bool Mineserver::init()
 		int n = 0;
 		for (std::list<std::string>::const_iterator it = tmp->begin(); it != tmp->end(); ++it)
 		{
-			m_map.push_back(new Map());
-			Physics* phy = new Physics;
-			phy->map = n;
-			m_physics.push_back(phy);
+			boost::shared_ptr<World> newWorld(new World());
+			newWorld->m_map.reset(new Map());
+			newWorld->m_physics.reset(new Physics);
+			newWorld->m_physics->map = n;
+
 			int k = m_config->iData((std::string(key) + ".") + (*it));
-			if ((uint32_t)k >= m_mapGenNames.size())
-			{
-				std::ostringstream s;
-				s << "Error! Mapgen number " << k << " in config. " << m_mapGenNames.size() << " Mapgens known";
-				LOG2(INFO, s.str());
-			}
 			// WARNING: if k is too big this will be an access error! -- louisdx
-			MapGen* m = m_mapGenNames[k];
-			m_mapGen.push_back(m);
+			switch(k)
+			{
+			case 0:
+				{
+					newWorld->m_mapGen.reset(new MapGen());
+				}
+				break;
+			case 1:
+				{
+					newWorld->m_mapGen.reset(new NetherGen());
+				}
+				break;
+			case 2:
+				{
+					newWorld->m_mapGen.reset(new HeavenGen());
+				}
+				break;
+			case 3:
+				{
+					newWorld->m_mapGen.reset(new BiomeGen());
+				}
+				break;
+			case 4:
+				{
+					newWorld->m_mapGen.reset(new EximGen());
+				}
+				break;
+			default:
+				{
+					// use biomeGen as default
+					newWorld->m_mapGen.reset(new BiomeGen());
+					std::ostringstream s;
+					s << "Error! Mapgen number " << k << " in config unkown.";
+					LOG2(INFO, s.str());
+				}
+				break;
+			}
+
+			mWorlds.push_back(newWorld);
 			n++;
 
 		}
@@ -396,7 +417,7 @@ bool Mineserver::init()
 		LOG2(WARNING, "Cannot find map.storage.nbt.directories.*");
 	}
 
-	if (m_map.size() == 0)
+	if (mWorlds.size() == 0)
 	{
 		LOG2(ERROR, "No worlds in Config!");
 		return false;
@@ -422,14 +443,6 @@ bool Mineserver::free()
 		screen()->end();
 	}
 
-	// Free memory
-	for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
-	{
-		delete m_map[i];
-		delete m_physics[i];
-		delete m_mapGen[i];
-	}
-
 	// Remove the PID file
 #ifdef WIN32
 	_unlink((config()->sData("system.pid_file")).c_str());
@@ -448,9 +461,9 @@ event_base* Mineserver::getEventBase()
 
 void Mineserver::saveAll()
 {
-	for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
+	for (int i = 0; i < mWorlds.size(); i++)
 	{
-		m_map[i]->saveWholeMap();
+		mWorlds[i]->m_map->saveWholeMap();
 	}
 	saveAllPlayers();
 }
@@ -498,11 +511,11 @@ bool Mineserver::run()
 	}
 
 	// Initialize map
-	for (int i = 0; i < (int)m_map.size(); i++)
+	for (int i = 0; i < (int)mWorlds.size(); i++)
 	{
 		physics(i)->enabled = (config()->bData("system.physics.enabled"));
 
-		m_map[i]->init(i);
+		mWorlds[i]->m_map->init(i);
 		if (config()->bData("map.generate_spawn.enabled"))
 		{
 			LOG2(INFO, "Generating spawn area...");
@@ -530,7 +543,7 @@ bool Mineserver::run()
 				}
 				for (int z = -size; z <= size; z++)
 				{
-					m_map[i]->loadMap(x, z);
+					mWorlds[i]->m_map->loadMap(x, z);
 				}
 
 				if (show_progress)
@@ -659,7 +672,7 @@ bool Mineserver::run()
 		}
 
 		//Update physics every 200ms
-		for (std::vector<Map*>::size_type i = 0 ; i < m_map.size(); i++)
+		for (std::vector<Map*>::size_type i = 0 ; i < mWorlds.size(); i++)
 		{
 			physics(i)->update();
 		}
@@ -674,9 +687,9 @@ bool Mineserver::run()
 			if (m_saveInterval != 0 && timeNow - m_lastSave >= m_saveInterval)
 			{
 				//Save
-				for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
+				for (std::vector<Map*>::size_type i = 0; i < mWorlds.size(); i++)
 				{
-					m_map[i]->saveWholeMap();
+					mWorlds[i]->m_map->saveWholeMap();
 				}
 
 				m_lastSave = timeNow;
@@ -687,14 +700,14 @@ bool Mineserver::run()
 			{
 				// Send server time
 				Packet pkt;
-				pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)m_map[0]->mapTime;
+				pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)mWorlds[0]->m_map->mapTime;
 				User::all()[0]->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 			}
 
 			//Check for tree generation from saplings
-			for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
+			for (std::vector<Map*>::size_type i = 0; i < mWorlds.size(); i++)
 			{
-				m_map[i]->checkGenTrees();
+				mWorlds[i]->m_map->checkGenTrees();
 			}
 
 			// TODO: Run garbage collection for chunk storage dealie?
@@ -733,12 +746,12 @@ bool Mineserver::run()
 
 			}
 
-			for (std::vector<Map*>::size_type i = 0 ; i < m_map.size(); i++)
+			for (std::vector<Map*>::size_type i = 0 ; i < mWorlds.size(); i++)
 			{
-				m_map[i]->mapTime += 20;
-				if (m_map[i]->mapTime >= 24000)
+				mWorlds[i]->m_map->mapTime += 20;
+				if (mWorlds[i]->m_map->mapTime >= 24000)
 				{
-					m_map[i]->mapTime = 0;
+					mWorlds[i]->m_map->mapTime = 0;
 				}
 			}
 

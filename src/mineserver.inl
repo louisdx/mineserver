@@ -32,7 +32,7 @@ inline std::vector<User*>& Mineserver::users()
 
 inline size_t Mineserver::mapCount()
 {
-	return m_map.size();
+	return mWorlds.size();
 }
 
 inline NonNull<Chat> Mineserver::chat() 
@@ -57,7 +57,8 @@ inline NonNull<Screen> Mineserver::screen()
 
 inline Physics* Mineserver::physics(size_t n) 
 {
-	return m_physics[n];
+	assert(n<mWorlds.size());
+	return mWorlds[n]->m_physics.get();
 }
 
 inline NonNull<Config> Mineserver::config() 
@@ -77,7 +78,8 @@ inline NonNull<PacketHandler> Mineserver::packetHandler()
 
 inline MapGen* Mineserver::mapGen(size_t n) 
 {
-	return m_mapGen[n];
+	assert(n<mWorlds.size());
+	return mWorlds[n]->m_mapGen.get();
 }
 
 inline NonNull<Inventory> Mineserver::inventory() 
@@ -87,9 +89,9 @@ inline NonNull<Inventory> Mineserver::inventory()
 
 inline Ptr<Map> Mineserver::map(size_t n)
 {
-	if (n < m_map.size())
+	if (n < mWorlds.size())
 	{
-		return m_map[n];
+		return mWorlds[n]->m_map.get();
 	}
 	
 	return NULL;

@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <event.h>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "util/NonNull.h"
 #include "util/Ptr.h"
@@ -124,10 +125,14 @@ private:
 	// holds all connected users
 	std::vector<User*>    m_users;
 
-	std::vector<Map*>     m_map;
-	std::vector<Physics*> m_physics;
-	std::vector<MapGen*>  m_mapGenNames;
-	std::vector<MapGen*>  m_mapGen;
+	struct World
+	{
+		boost::scoped_ptr<Map>		m_map;
+		boost::scoped_ptr<Physics>	m_physics;
+		boost::scoped_ptr<MapGen>	m_mapGen;
+	};
+
+	std::vector< boost::shared_ptr<World> >     mWorlds;
 
 	// core modules
 	boost::scoped_ptr<Config> m_config;
