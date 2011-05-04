@@ -116,7 +116,7 @@ public:
 protected:
   void set(int32_t xloc, int32_t yloc, int32_t zloc, int blocktType, char metaData);
 private:
-	boost::scoped_ptr<Trunk> m_Branch[256]; // 1KB on x86 and 2KB on x86_64 Faster than stack or vector tho :)
+  boost::scoped_ptr<Trunk> m_Branch[256]; // 1KB on x86 and 2KB on x86_64 Faster than stack or vector tho :)
   // With full array of allocated classes it rounds up to...
   // 3.6KB on x86 :F 4.6KB on x86_64
   // it is a good enough buffer for absolutely MASSIVE MASSIVE TREES

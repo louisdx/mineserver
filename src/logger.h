@@ -39,8 +39,8 @@
 class Logger
 {
 public:
-	static void log(const std::string& message, const std::string& file, int line);
-	static void log(LogType::LogType type, const std::string& source, const std::string& message);
+  static void log(const std::string& message, const std::string& file, int line);
+  static void log(LogType::LogType type, const std::string& source, const std::string& message);
 
 };
 

@@ -3,12 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mineserver", "mineserver.vcproj", "{62837E01-24FA-4205-9533-950FBB5DBDD2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "commands", "..\..\plugins\commands\commands.vcproj", "{31BE797A-EA02-48D6-BC80-C528CD77FF11}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "filelog", "..\..\plugins\filelog\filelog.vcproj", "{58D02F2E-66AD-41F1-BB3E-09B48170AA30}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bindump", "..\..\plugins\binlog\bindump.vcproj", "{A0C20C4A-2D1D-480E-BD98-47CD73846C5C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,18 +13,6 @@ Global
 		{62837E01-24FA-4205-9533-950FBB5DBDD2}.Debug|Win32.Build.0 = Debug|Win32
 		{62837E01-24FA-4205-9533-950FBB5DBDD2}.Release|Win32.ActiveCfg = Release|Win32
 		{62837E01-24FA-4205-9533-950FBB5DBDD2}.Release|Win32.Build.0 = Release|Win32
-		{31BE797A-EA02-48D6-BC80-C528CD77FF11}.Debug|Win32.ActiveCfg = Debug|Win32
-		{31BE797A-EA02-48D6-BC80-C528CD77FF11}.Debug|Win32.Build.0 = Debug|Win32
-		{31BE797A-EA02-48D6-BC80-C528CD77FF11}.Release|Win32.ActiveCfg = Release|Win32
-		{31BE797A-EA02-48D6-BC80-C528CD77FF11}.Release|Win32.Build.0 = Release|Win32
-		{58D02F2E-66AD-41F1-BB3E-09B48170AA30}.Debug|Win32.ActiveCfg = Debug|Win32
-		{58D02F2E-66AD-41F1-BB3E-09B48170AA30}.Debug|Win32.Build.0 = Debug|Win32
-		{58D02F2E-66AD-41F1-BB3E-09B48170AA30}.Release|Win32.ActiveCfg = Release|Win32
-		{58D02F2E-66AD-41F1-BB3E-09B48170AA30}.Release|Win32.Build.0 = Release|Win32
-		{A0C20C4A-2D1D-480E-BD98-47CD73846C5C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{A0C20C4A-2D1D-480E-BD98-47CD73846C5C}.Debug|Win32.Build.0 = Debug|Win32
-		{A0C20C4A-2D1D-480E-BD98-47CD73846C5C}.Release|Win32.ActiveCfg = Release|Win32
-		{A0C20C4A-2D1D-480E-BD98-47CD73846C5C}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
