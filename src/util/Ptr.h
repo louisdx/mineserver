@@ -31,18 +31,16 @@
 #include "safebool.h"
 
 template<class T>
-class Ptr : public safe_bool <Ptr>
+class Ptr : public safe_bool < Ptr<T> >
 {
 public:
-	template<class T>
-	Ptr::Ptr()
-		mPtr(NULL)
+	Ptr()
+		:mPtr(NULL)
 	{
 	}
 
-	template<class T>
-	Ptr::Ptr(T* ptr)
-		mPtr(ptr)
+	Ptr(T* ptr)
+		:mPtr(ptr)
 	{
 	}
 

@@ -36,9 +36,17 @@
 #include "logtype.h"
 #include "tools.h"
 
-#define LOGLF(msg) Mineserver::get()->logger()->log(msg, std::string(__FILE__), __LINE__)
+class Logger
+{
+public:
+	static void log(const std::string& message, const std::string& file, int line);
+	static void log(LogType::LogType type, const std::string& source, const std::string& message);
 
-#define LOG(type, source, msg) Mineserver::get()->logger()->log(LogType::LOG_##type, source, msg)
+};
+
+#define LOGLF(msg) Logger::log(msg, std::string(__FILE__), __LINE__)
+
+#define LOG(type, source, msg) Logger::log(LogType::LOG_##type, source, msg)
 
 
 // TODO: winex: log(type, file, line, msg) might be better than this
@@ -49,15 +57,8 @@
 #define LOG_FORMAT   LOG_FILENAME + "::" + std::string(__FUNCTION__) + "()"
 #endif
 
-#define LOG2(type, msg) Mineserver::get()->logger()->log(LogType::LOG_##type, LOG_FORMAT, msg)
+#define LOG2(type, msg) Logger::log(LogType::LOG_##type, LOG_FORMAT, msg)
 
 
-class Logger
-{
-public:
-  void log(const std::string& message, const std::string& file, int line);
-  void log(LogType::LogType type, const std::string& source, const std::string& message);
-
-};
 
 #endif

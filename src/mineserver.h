@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/scoped_ptr.hpp>
 
 #include "util/NonNull.h"
+#include "util/Ptr.h"
 
 class User;
 class Map;
@@ -94,19 +95,18 @@ public:
 	bool m_damage_enabled;
 	bool m_only_helmets;
 
-	Map* map(size_t n);
+	inline Ptr<Map> map(size_t n);
 	inline size_t mapCount();
-	inline Chat* chat();
-	inline Mobs* mobs();
-	inline Plugin* plugin();
+	inline NonNull<Chat> chat();
+	inline NonNull<Mobs> mobs();
+	inline NonNull<Plugin> plugin();
 	inline NonNull<Screen> screen();
 	inline Physics* physics(size_t n);
 	inline NonNull<Config> config();
-	inline FurnaceManager* furnaceManager();
-	inline PacketHandler* packetHandler();
+	inline NonNull<FurnaceManager> furnaceManager();
+	inline NonNull<PacketHandler> packetHandler();
 	inline MapGen* mapGen(size_t n);
-	inline NonNull<Logger> logger();
-	inline Inventory* inventory();
+	inline NonNull<Inventory> inventory();
 
 	void saveAllPlayers();
 	void saveAll();
@@ -132,7 +132,6 @@ private:
 	// core modules
 	boost::scoped_ptr<Config> m_config;
 	boost::scoped_ptr<Screen> m_screen;
-	boost::scoped_ptr<Logger> m_logger;
 
 	Plugin*         m_plugin;
 	Chat*           m_chat;

@@ -128,7 +128,7 @@ void client_callback(int fd,
 				int (PacketHandler::*function)(User*) =
 					Mineserver::get()->packetHandler()->packets[user->action].function;
 				bool disconnecting = user->action == 0xFF;
-				int curpos = (Mineserver::get()->packetHandler()->*function)(user);
+				int curpos = (Mineserver::get()->packetHandler().get()->*function)(user);
 				if (curpos == PACKET_NEED_MORE_DATA)
 				{
 					user->waitForData = true;
@@ -166,7 +166,7 @@ void client_callback(int fd,
 
 				//Call specific function
 				int (PacketHandler::*function)(User*) = Mineserver::get()->packetHandler()->packets[user->action].function;
-				(Mineserver::get()->packetHandler()->*function)(user);
+				(Mineserver::get()->packetHandler().get()->*function)(user);
 			}
 		} //End while
 	}

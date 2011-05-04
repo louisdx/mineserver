@@ -197,7 +197,7 @@ void hook_doAll(const char* hookID, ...)
 // LOGGER WRAPPER FUNCTIONS
 void logger_log(int type, const char* source, const char* message)
 {
-  Mineserver::get()->logger()->log((LogType::LogType)type, std::string(source), std::string(message));
+  Logger::log((LogType::LogType)type, std::string(source), std::string(message));
 }
 
 // CHAT WRAPPER FUNCTIONS

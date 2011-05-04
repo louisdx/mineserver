@@ -35,17 +35,17 @@ inline size_t Mineserver::mapCount()
 	return m_map.size();
 }
 
-inline Chat* Mineserver::chat() 
+inline NonNull<Chat> Mineserver::chat() 
 {
 	return m_chat;
 }
 
-inline Mobs* Mineserver::mobs() 
+inline NonNull<Mobs> Mineserver::mobs() 
 {
 	return m_mobs;
 }
 
-inline Plugin* Mineserver::plugin() 
+inline NonNull<Plugin> Mineserver::plugin() 
 {
 	return m_plugin;
 }
@@ -65,12 +65,12 @@ inline NonNull<Config> Mineserver::config()
 	return m_config.get();
 }
 
-inline FurnaceManager* Mineserver::furnaceManager() 
+inline NonNull<FurnaceManager> Mineserver::furnaceManager() 
 {
 	return m_furnaceManager;
 }
 
-inline PacketHandler* Mineserver::packetHandler() 
+inline NonNull<PacketHandler> Mineserver::packetHandler() 
 {
 	return m_packetHandler;
 }
@@ -80,12 +80,17 @@ inline MapGen* Mineserver::mapGen(size_t n)
 	return m_mapGen[n];
 }
 
-inline NonNull<Logger> Mineserver::logger() 
-{
-	return m_logger.get();
-}
-
-inline Inventory* Mineserver::inventory() 
+inline NonNull<Inventory> Mineserver::inventory() 
 {
 	return m_inventory;
+}
+
+inline Ptr<Map> Mineserver::map(size_t n)
+{
+	if (n < m_map.size())
+	{
+		return m_map[n];
+	}
+	
+	return NULL;
 }

@@ -258,7 +258,6 @@ m_eventBase     (NULL),
 // core modules
 m_config        (new Config()),
 m_screen        (new CliScreen()),
-m_logger        (new Logger()),
 
 m_plugin        (NULL),
 m_chat          (NULL),
@@ -863,16 +862,6 @@ bool Mineserver::homePrepare(const std::string& path)
 	}
 
 	return true;
-}
-
-Map* Mineserver::map(size_t n)
-{
-	if (n < m_map.size())
-	{
-		return m_map[n];
-	}
-	LOG2(WARNING, "Nonexistent map requested. Map 0 passed");
-	return m_map[0];
 }
 
 Mineserver* Mineserver::get()
