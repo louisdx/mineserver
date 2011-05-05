@@ -251,9 +251,12 @@ void Map::init(int number)
   const char* key = "map.storage.nbt.directories"; // Prefix for worlds config
   std::auto_ptr< std::list<std::string> > tmp(Mineserver::get()->config()->mData(key)->keys());
 
-  std::list<std::string>::const_iterator it = tmp->begin();
-  std::advance(it, number);
-  mapDirectory = *it;
+  if (number < tmp->size())
+  {
+    std::list<std::string>::const_iterator it = tmp->begin();
+    std::advance(it, number);
+    mapDirectory = *it;
+  }
 
   LOG2(INFO, "World " + mapDirectory);
 
