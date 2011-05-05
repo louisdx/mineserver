@@ -62,6 +62,8 @@
 #include "furnaceManager.h"
 #include "mcregion.h"
 
+using std::max;
+
 Map::Map(const Map& oldmap)
   // Copy Construtor
   :
@@ -655,7 +657,7 @@ void Map::spreadLight(int x, int y, int z, int light_value, uint8_t type /* 0: s
 
       getLight(x_toset, y_toset, z_toset, &skylightCurrent, &blocklightCurrent, chunk);
 
-      const int lightNew = std::max(0, light_value - int(stopLight[block]) - 1);
+      const int lightNew = max(0, light_value - int(stopLight[block]) - 1);
 
       if (lightNew > (type == 0 ? skylightCurrent : blocklightCurrent))
       {
