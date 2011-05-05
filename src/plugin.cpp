@@ -118,8 +118,8 @@ void Plugin::init()
   BlockCB.push_back(woolblock);
   Blockjackolantern* jackolanternblock = new Blockjackolantern();
   BlockCB.push_back(jackolanternblock);
-  //BlockDefault* defaultblock = new BlockDefault();
-  //BlockCB.push_back(defaultblock);
+  BlockBasic* defaultblock = new BlockBasic();
+  BlockCB.push_back(defaultblock);
 
 
   ItemFood* fooditem = new ItemFood();
