@@ -67,6 +67,58 @@
 #include "items/food.h"
 #include "items/projectile.h"
 
+// Create default hooks
+Plugin::Plugin()
+{
+  setHook("Timer200", new Hook0<bool>);
+  setHook("Timer1000", new Hook0<bool>);
+  setHook("Timer10000", new Hook0<bool>);
+  setHook("PlayerLoginPre", new Hook2<bool, const char*, char***>);
+  setHook("PlayerLoginPost", new Hook1<bool, const char*>);
+  setHook("PlayerNickPost", new Hook2<bool, const char*, const char*>);
+  setHook("PlayerKickPost", new Hook2<bool, const char*, const char*>);
+  setHook("PlayerQuitPost", new Hook1<bool, const char*>);
+  setHook("PlayerChatPre", new Hook3<bool, const char*, time_t, const char*>);
+  setHook("PlayerChatPost", new Hook3<bool, const char*, time_t, const char*>);
+  setHook("PlayerArmSwing", new Hook1<bool, const char*>);
+  setHook("PlayerDamagePre", new Hook3<bool, const char*, const char*, int>);
+  setHook("PlayerDamagePost", new Hook3<bool, const char*, const char*, int>);
+  setHook("PlayerDisconnect", new Hook3<bool, const char*, uint32_t, uint16_t>);
+  setHook("PlayerDiggingStarted", new Hook5<bool, const char*, int32_t, int8_t, int32_t, int8_t>);
+  setHook("PlayerDigging", new Hook5<bool, const char*, int32_t, int8_t, int32_t, int8_t>);
+  setHook("PlayerDiggingStopped", new Hook5<bool, const char*, int32_t, int8_t, int32_t, int8_t>);
+  setHook("PlayerBlockInteract", new Hook4<bool, const char*, int32_t, int8_t, int32_t>);
+  setHook("BlockBreakPre", new Hook4<bool, const char*, int32_t, int8_t, int32_t>);
+  setHook("BlockBreakPost", new Hook4<bool, const char*, int32_t, int8_t, int32_t>);
+  setHook("BlockNeighbourBreak", new Hook7<bool, const char*, int32_t, int8_t, int32_t, int32_t, int8_t, int32_t>);
+  setHook("BlockPlacePre", new Hook6<bool, const char*, int32_t, int8_t, int32_t, int16_t, int8_t>);
+  setHook("ItemRightClickPre", new Hook6<bool, const char*, int32_t, int8_t, int32_t, int16_t, int8_t>);
+  setHook("BlockPlacePost", new Hook6<bool, const char*, int32_t, int8_t, int32_t, int16_t, int8_t>);
+  setHook("BlockNeighbourPlace", new Hook7<bool, const char*, int32_t, int8_t, int32_t, int32_t, int8_t, int32_t>);
+  setHook("BlockReplacePre", new Hook6<bool, const char*, int32_t, int8_t, int32_t, int16_t, int16_t>);
+  setHook("BlockReplacePost", new Hook6<bool, const char*, int32_t, int8_t, int32_t, int16_t, int16_t>);
+  setHook("BlockNeighbourReplace", new Hook9<bool, const char*, int32_t, int8_t, int32_t, int32_t, int8_t, int32_t, int16_t, int16_t>);
+  setHook("LogPost", new Hook3<bool, int, const char*, const char*>);
+  setHook("PlayerChatCommand", new Hook4<bool, const char*, const char*, int, const char**>);
+  setHook("PlayerRespawn", new Hook1<bool, const char*>);
+  setHook("gotAttacked", new Hook2<bool, const char*, int32_t>);
+
+  init();
+}
+
+// Remove existing hooks
+Plugin::~Plugin()
+{
+  for (HookMap::iterator it = m_hooks.begin(); it != m_hooks.end(); ++it)
+  {
+    delete it->second;
+  }
+
+  m_hooks.clear();
+
+  free();
+}
+
 void Plugin::init()
 {
   // Create Block* objects and put them away so we can delete them later
@@ -131,12 +183,12 @@ void Plugin::init()
 
 void Plugin::free()
 {
-  std::vector<BlockBasic*>::iterator it = BlockCB.begin();
-  for (; it != BlockCB.end(); ++it)
+  for (std::vector<BlockBasic*>::iterator it = BlockCB.begin(); it != BlockCB.end(); ++it)
   {
     delete *it;
   }
 }
+
 typedef void (*pfms)(mineserver_pointer_struct*);
 typedef void (*pfv)();
 
@@ -238,95 +290,5 @@ void Plugin::unloadPlugin(const std::string name)
   else
   {
     LOG(WARNING, "Plugin", name + " is not loaded!");
-  }
-}
-
-bool Plugin::hasHook(const std::string& name) const
-{
-  return m_hooks.find(name) != m_hooks.end();
-}
-
-Hook* Plugin::getHook(const std::string& name) const
-{
-  std::map<std::string, Hook*>::const_iterator hook = m_hooks.find(name);
-
-  if (hook == m_hooks.end())
-  {
-    return NULL;
-  }
-
-  return hook->second;
-}
-
-void Plugin::setHook(const std::string& name, Hook* hook)
-{
-  m_hooks[name] = hook;
-}
-
-void Plugin::remHook(const std::string& name)
-{
-  if (hasHook(name))
-  {
-    m_hooks.erase(name);
-  }
-}
-
-bool Plugin::hasPluginVersion(const std::string& name) const
-{
-  return m_pluginVersions.find(name) != m_pluginVersions.end();
-}
-
-float Plugin::getPluginVersion(const std::string& name) const
-{
-  std::map<std::string, float>::const_iterator pluginVersion = m_pluginVersions.find(name);
-
-  if (pluginVersion == m_pluginVersions.end())
-  {
-    return 0.0f;
-  }
-
-  return pluginVersion->second;
-}
-
-void Plugin::setPluginVersion(const std::string& name, float version)
-{
-  m_pluginVersions[name] = version;
-}
-
-void Plugin::remPluginVersion(const std::string& name)
-{
-  if (hasPluginVersion(name))
-  {
-    m_pluginVersions.erase(name);
-  }
-}
-
-bool Plugin::hasPointer(const std::string& name) const
-{
-  return m_pointers.find(name) != m_pointers.end();
-}
-
-void* Plugin::getPointer(const std::string& name) const
-{
-  std::map<std::string, void*>::const_iterator pointer = m_pointers.find(name);
-
-  if (pointer == m_pointers.end())
-  {
-    return NULL;
-  }
-
-  return pointer->second;
-}
-
-void Plugin::setPointer(const std::string& name, void* pointer)
-{
-  m_pointers[name] = pointer;
-}
-
-void Plugin::remPointer(const std::string& name)
-{
-  if (hasPointer(name))
-  {
-    m_pointers.erase(name);
   }
 }
