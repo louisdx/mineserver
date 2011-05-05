@@ -62,7 +62,7 @@ typedef  int socklen_t;
 #include "nbt.h"
 #include "mineserver.h"
 
-#include "packets.h"
+#include "./packets/packets.h"
 #include <algorithm>
 
 #include <boost/scoped_array.hpp>

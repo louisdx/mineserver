@@ -55,7 +55,6 @@ class FurnaceManager;
 class PacketHandler;
 class Physics;
 class MapGen;
-class Logger;
 class Inventory;
 class Mobs;
 class Mob;

@@ -40,7 +40,7 @@
 
 #include "vec.h"
 #include "inventory.h"
-#include "packets.h"
+#include "./packets/packets.h"
 
 struct position
 {

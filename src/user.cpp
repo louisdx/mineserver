@@ -53,7 +53,7 @@
 #include "user.h"
 #include "chat.h"
 #include "plugin.h"
-#include "packets.h"
+#include "./packets/packets.h"
 #include "mineserver.h"
 #include "config.h"
 #include "permissions.h"

@@ -252,10 +252,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\kit.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\lighting.cpp"
 				>
 			</File>
@@ -317,14 +313,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\nbt.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\packets.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\packets.h"
 				>
 			</File>
 			<File
@@ -748,6 +736,26 @@
 				</File>
 				<File
 					RelativePath="..\..\src\util\safebool.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="packets"
+				>
+				<File
+					RelativePath="..\..\src\packets\packet.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\packets\packet.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\packets\packets.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\packets\packets.h"
 					>
 				</File>
 			</Filter>

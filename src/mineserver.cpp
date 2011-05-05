@@ -74,7 +74,7 @@
 #include "config.h"
 #include "config/node.h"
 #include "nbt.h"
-#include "packets.h"
+#include "./packets/packets.h"
 #include "physics.h"
 #include "plugin.h"
 #include "furnaceManager.h"

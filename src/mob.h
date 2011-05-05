@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include "user.h"
 #include "constants.h"
-#include "packets.h"
+#include "./packets/packets.h"
 #include "mineserver.h"
 
 

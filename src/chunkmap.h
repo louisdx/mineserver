@@ -34,7 +34,7 @@
 #include <iostream>
 #include <ctime>
 
-#include "packets.h"
+#include "./packets/packets.h"
 #include "user.h"
 #include "nbt.h"
 

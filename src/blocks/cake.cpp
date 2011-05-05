@@ -27,7 +27,7 @@
 
 #include "../mineserver.h"
 #include "../map.h"
-#include "../packets.h"
+#include "../packets/packets.h"
 
 #include "cake.h"
 

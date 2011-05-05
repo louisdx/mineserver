@@ -33,6 +33,7 @@
 
 #include ".\notchian\EClientToServerPacket.h"
 #include ".\notchian\EServerToClientPacket.h"
+#include "packet.h"
 
 #define PACKET_NEED_MORE_DATA -3
 #define PACKET_DOES_NOT_EXIST -2
@@ -45,121 +46,6 @@
 
 class PacketHandler;
 class User;
-
-class Packet
-{
-  typedef std::vector<uint8_t> BufferVector;
-
-private:
-  BufferVector m_readBuffer;
-  BufferVector::size_type m_readPos;
-  bool m_isValid;
-
-  BufferVector m_writeBuffer;
-
-public:
-  Packet() : m_readPos(0), m_isValid(true) {}
-
-  bool haveData(int requiredBytes)
-  {
-    return m_isValid = m_isValid && ((m_readPos + requiredBytes) <= m_readBuffer.size());
-  }
-
-  operator bool() const
-  {
-    return m_isValid;
-  }
-
-  void reset()
-  {
-    m_readPos = 0;
-    m_isValid = true;
-  }
-
-  void addToRead(const BufferVector& buffer)
-  {
-    m_readBuffer.insert(m_readBuffer.end(), buffer.begin(), buffer.end());
-  }
-
-  void addToRead(const void* data, BufferVector::size_type dataSize)
-  {
-    BufferVector::size_type start = m_readBuffer.size();
-    m_readBuffer.resize(start + dataSize);
-    memcpy(&m_readBuffer[start], data, dataSize);
-  }
-
-  void addToWrite(const void* data, BufferVector::size_type dataSize)
-  {
-    if (dataSize == 0)
-    {
-      return;
-    }
-    BufferVector::size_type start = m_writeBuffer.size();
-    m_writeBuffer.resize(start + dataSize);
-    memcpy(&m_writeBuffer[start], data, dataSize);
-  }
-
-  void removePacket()
-  {
-    m_readBuffer.erase(m_readBuffer.begin(), m_readBuffer.begin() + m_readPos);
-    m_readPos = 0;
-  }
-
-  Packet& operator<<(int8_t val);
-  Packet& operator>>(int8_t& val);
-  Packet& operator<<(int16_t val);
-  Packet& operator>>(int16_t& val);
-  Packet& operator<<(int32_t val);
-  Packet& operator>>(int32_t& val);
-  Packet& operator<<(int64_t val);
-  Packet& operator>>(int64_t& val);
-  Packet& operator<<(float val);
-  Packet& operator>>(float& val);
-  Packet& operator<<(double val);
-  Packet& operator>>(double& val);
-  Packet& operator<<(const std::wstring& str);
-  Packet& operator>>(std::wstring& str);
-
-  // convert to wstring and call that operator
-  Packet& operator<<(const std::string& str);
-  Packet& operator>>(std::string& str);
-
-  void writeString(const std::string& str);
-  std::string readString();
-
-  void operator<<(Packet& other);
-
-  void getData(void* buf, int count)
-  {
-    if (haveData(count))
-    {
-      memcpy(buf, &m_readBuffer[m_readPos], count);
-      m_readPos += count;
-    }
-  }
-
-  void* getWrite()
-  {
-    return &m_writeBuffer[0];
-  }
-
-  const void* getWrite() const
-  {
-    return &m_writeBuffer[0];
-  }
-
-  size_t getWriteLen() const
-  {
-    return m_writeBuffer.size();
-  }
-
-  void clearWrite(int count)
-  {
-    m_writeBuffer.erase(m_writeBuffer.begin(), m_writeBuffer.begin() + count);
-  }
-};
-
-
 
 struct Packets
 {

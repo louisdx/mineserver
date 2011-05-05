@@ -52,26 +52,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <functional>
 
-#include "chat.h"
-#include "config.h"
-#include "constants.h"
-#include "furnaceManager.h"
-#include "inventory.h"
-#include "logger.h"
-#include "map.h"
-#include "mineserver.h"
-#include "nbt.h"
+#include "../chat.h"
+#include "../config.h"
+#include "../constants.h"
+#include "../furnaceManager.h"
+#include "../inventory.h"
+#include "../logger.h"
+#include "../map.h"
+#include "../mineserver.h"
+#include "../nbt.h"
 #include "packets.h"
-#include "physics.h"
-#include "plugin.h"
-#include "sockets.h"
-#include "tools.h"
-#include "user.h"
-#include "blocks/basic.h"
+#include "../physics.h"
+#include "../plugin.h"
+#include "../sockets.h"
+#include "../tools.h"
+#include "../user.h"
+#include "../blocks/basic.h"
 //#include "blocks/default.h"
-#include "blocks/note.h"
-#include "items/itembasic.h"
-#include "mob.h"
+#include "../blocks/note.h"
+#include "../items/itembasic.h"
+#include "../mob.h"
 
 #include <boost/scoped_array.hpp>
 
@@ -1351,201 +1351,8 @@ int PacketHandler::use_entity(User* user)
 
 int PacketHandler::respawn(User* user)
 {
-	user->dropInventory();
-	user->respawn();
-	user->buffer.removePacket();
-	return PACKET_OK;
-}
-
-// Shift operators for Packet class
-Packet& Packet::operator<<(int8_t val)
-{
-	m_writeBuffer.push_back(val);
-	return *this;
-}
-
-Packet& Packet::operator>>(int8_t& val)
-{
-	if (haveData(1))
-	{
-		val = *reinterpret_cast<const int8_t*>(&m_readBuffer[m_readPos]);
-		m_readPos += 1;
-	}
-	return *this;
-}
-
-Packet& Packet::operator<<(int16_t val)
-{
-	uint16_t nval = htons(val);
-	addToWrite(&nval, 2);
-	return *this;
-}
-
-Packet& Packet::operator>>(int16_t& val)
-{
-	if (haveData(2))
-	{
-		val = ntohs(*reinterpret_cast<const int16_t*>(&m_readBuffer[m_readPos]));
-		m_readPos += 2;
-	}
-	return *this;
-}
-
-Packet& Packet::operator<<(int32_t val)
-{
-	uint32_t nval = htonl(val);
-	addToWrite(&nval, 4);
-	return *this;
-}
-
-Packet& Packet::operator>>(int32_t& val)
-{
-	if (haveData(4))
-	{
-		val = ntohl(*reinterpret_cast<const int32_t*>(&m_readBuffer[m_readPos]));
-		m_readPos += 4;
-	}
-	return *this;
-}
-
-Packet& Packet::operator<<(int64_t val)
-{
-	uint64_t nval = ntohll(val);
-	addToWrite(&nval, 8);
-	return *this;
-}
-
-Packet& Packet::operator>>(int64_t& val)
-{
-	if (haveData(8))
-	{
-		memcpy(&val, &m_readBuffer[m_readPos], 8);
-		val = ntohll(val);
-		m_readPos += 8;
-	}
-	return *this;
-}
-
-Packet& Packet::operator<<(float val)
-{
-	uint32_t nval;
-	memcpy(&nval, &val , 4);
-	nval = htonl(nval);
-	addToWrite(&nval, 4);
-	return *this;
-}
-
-Packet& Packet::operator>>(float& val)
-{
-	if (haveData(4))
-	{
-		int32_t ival = ntohl(*reinterpret_cast<const int32_t*>(&m_readBuffer[m_readPos]));
-		memcpy(&val, &ival, 4);
-		m_readPos += 4;
-	}
-	return *this;
-}
-
-Packet& Packet::operator<<(double val)
-{
-	uint64_t nval;
-	memcpy(&nval, &val, 8);
-	nval = ntohll(nval);
-	addToWrite(&nval, 8);
-	return *this;
-}
-
-
-Packet& Packet::operator>>(double& val)
-{
-	if (haveData(8))
-	{
-		uint64_t ival;
-		memcpy(&ival, &m_readBuffer[m_readPos], 8);
-		ival = ntohll(ival);
-		memcpy((void*)&val, (void*)&ival, 8);
-		m_readPos += 8;
-	}
-	return *this;
-}
-
-Packet& Packet::operator<<(const std::wstring& str)
-{
-	const std::wstring& outBuffer = hsttonst(str);// bytes need to be flipped!
-	uint16_t lenval = htons(str.size());
-	addToWrite(&lenval, 2);
-
-	addToWrite(&str[0], str.size()*2);
-	return *this;
-}
-
-Packet& Packet::operator>>(std::wstring& str)
-{
-	uint16_t lenval;
-	if (haveData(2))
-	{
-		lenval = ntohs(*reinterpret_cast<const int16_t*>(&m_readBuffer[m_readPos]));
-		m_readPos += 2;
-
-		if (lenval && haveData(lenval*2))
-		{
-			str.assign((wchar_t*)&m_readBuffer[m_readPos], lenval);
-			str = nsttohst(str); // bytes need to be flipped!
-			m_readPos += lenval*2;
-		}
-	}
-	return *this;
-}
-
-Packet& Packet::operator<<(const std::string& str)
-{
-	std::wstring ws = stows(str);
-	(*this)<<ws;
-	return *this;
-}
-
-Packet& Packet::operator>>(std::string& str)
-{
-	std::wstring ws;
-	(*this) >> ws;
-	str = wstos(ws);
-	return *this;
-}
-
-
-void Packet::writeString(const std::string& str)
-{
-	uint16_t lenval = htons(str.size());
-	addToWrite(&lenval, 2);
-
-	addToWrite(&str[0], str.size());
-}
-std::string Packet::readString()
-{
-	std::string str;
-	uint16_t lenval;
-	if (haveData(2))
-	{
-		lenval = ntohs(*reinterpret_cast<const int16_t*>(&m_readBuffer[m_readPos]));
-		m_readPos += 2;
-
-		if (lenval && haveData(lenval))
-		{
-			str.assign((char*)&m_readBuffer[m_readPos], lenval);
-			m_readPos += lenval;
-		}
-	}
-	return str;
-}
-
-void Packet::operator<<(Packet& other)
-{
-	int dataSize = other.getWriteLen();
-	if (dataSize == 0)
-	{
-		return;
-	}
-	BufferVector::size_type start = m_writeBuffer.size();
-	m_writeBuffer.resize(start + dataSize);
-	memcpy(&m_writeBuffer[start], other.getWrite(), dataSize);
+  user->dropInventory();
+  user->respawn();
+  user->buffer.removePacket();
+  return PACKET_OK;
 }
