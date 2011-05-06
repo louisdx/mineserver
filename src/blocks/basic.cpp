@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <boost/bind.hpp>
 
 #include "../mineserver.h"
 #include "../plugin.h"
@@ -72,23 +73,26 @@ bool BlockBasic::isBlockStackable(const uint8_t block)
   return true;
 }
 
+bool checkOnBlock(const int32_t x, const int8_t y, const int32_t z, NonNull<User> user)
+{
+  /* don't allow block placement on top of player */
+  if (user->checkOnBlock(x, y, z))
+  {
+    return true;
+  }
+  if (user->checkOnBlock(x, y - 1, z))
+  {
+    return true;
+  }
+  return false;
+}
+
 bool BlockBasic::isUserOnBlock(const int32_t x, const int8_t y, const int32_t z, const int map)
 {
-  /* TODO: Get Users by chunk rather then whole list */
-  for (unsigned int i = 0; i < User::all().size(); i++)
-  {
-    /* don't allow block placement on top of player */
-    if (User::all()[i]->checkOnBlock(x, y, z))
-    {
-      return true;
-    }
-    if (User::all()[i]->checkOnBlock(x, y - 1, z))
-    {
-      return true;
-    }
-  }
+  Ptr<User> result(Mineserver::get()->findUser(boost::bind(&checkOnBlock,x,y,z,_1)));
 
-  return false;
+  // safe to test result as a bool, because it is a safe_bool
+  return result;
 }
 
 bool BlockBasic::translateDirection(int32_t* x, int8_t* y, int32_t* z, int map, const int8_t direction)

@@ -24,6 +24,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef ESERVERTOCLIENTPACKET_H
+#define ESERVERTOCLIENTPACKET_H
 
 #include "..\util\Enum.h"
 
@@ -63,3 +65,5 @@ enum EServerToClientPacket_raw
 };
 
 DeclareEnum(EServerToClientPacket_raw,EServerToClientPacket);
+
+#endif //ESERVERTOCLIENTPACKET_H

@@ -336,7 +336,7 @@ int PacketHandler::login_request(User* user)
 
   user->buffer.removePacket();
 
-  while (User::byNick(player) != NULL)
+  while (Mineserver::get()->userFromName(player) != NULL)
   {
     player.append("_");
   }
@@ -353,7 +353,7 @@ int PacketHandler::login_request(User* user)
   }
 
   // If userlimit is reached
-  if ((int)User::all().size() > Mineserver::get()->config()->iData("system.user_limit"))
+  if ((int)Mineserver::get()->userCount() > Mineserver::get()->config()->iData("system.user_limit"))
   {
     user->kick(Mineserver::get()->config()->sData("strings.server_full"));
     return PACKET_OK;
@@ -1319,21 +1319,15 @@ int PacketHandler::use_entity(User* user)
 
   if (Mineserver::get()->m_pvp_enabled)
   {
-    //This is used when punching users, mobs or other entities
-    for (uint32_t i = 0; i < User::all().size(); i++)
+    if(Ptr<User> result = Mineserver::get()->userFromEID((uint32_t)target))
     {
-      if (User::all()[i]->UID == (uint32_t)target)
-      {
-        User::all()[i]->health--;
-        User::all()[i]->sethealth(User::all()[i]->health);
+      result->sethealth(result->health-1);
 
-        if (User::all()[i]->health <= 0)
-        {
-          Packet pkt;
-          pkt << eServerToClientPacket_Death_animation << (int32_t)User::all()[i]->UID << (int8_t)3;
-          User::all()[i]->sendOthers((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
-        }
-        break;
+      if (result->health <= 0)
+      {
+        Packet pkt;
+        pkt << eServerToClientPacket_Death_animation << (int32_t)result->UID << (int8_t)3;
+        result->sendOthers((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
       }
     }
   }

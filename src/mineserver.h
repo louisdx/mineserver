@@ -31,6 +31,8 @@
 #include <vector>
 #include <string>
 
+#include <boost/function.hpp>
+
 #ifdef WIN32
 // This is needed for event to work on Windows.
 #include <Winsock2.h>
@@ -82,7 +84,27 @@ public:
 
   event_base* getEventBase();
 
-  inline std::vector<User*>& users();
+  // allowed to modify users, but not delete them!
+  void forEachUser(boost::function<void(NonNull<User>)>);
+
+  // not allowed to modify users! but allowed to delete them
+  void forEachUserRemoveIfTrue(boost::function<bool(NonNull<User const> const)>);
+
+  // O(N) search, use sparingly
+  Ptr<User> userFromName(std::string user, bool caseSensative = false);
+
+  // returns the first user where condition returns true
+  Ptr<User> findUser(boost::function<bool(NonNull<User>)> condition);
+
+  // number of current users
+  size_t userCount() const;
+
+  inline NonNull<User> userFromIndex(size_t index);
+  Ptr<User> userFromEID(unsigned int EID);
+
+  NonNull<User> createUser(int sock);
+
+  inline NonNull<User> serverUser() const;
 
   struct event m_listenEvent;
   int m_socketlisten;
@@ -106,7 +128,6 @@ public:
   inline NonNull<MapGen> mapGen(size_t n);
   inline NonNull<Inventory> inventory();
 
-  void saveAllPlayers();
   void saveAll();
 
   bool homePrepare(const std::string& path);
@@ -120,7 +141,8 @@ private:
   event_base* m_eventBase;
 
   // holds all connected users
-  std::vector<User*>    m_users;
+  std::vector< boost::shared_ptr<User> >    m_users;
+  boost::scoped_ptr<User> mServerUser;
 
   struct World
   {

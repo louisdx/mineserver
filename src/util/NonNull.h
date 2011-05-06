@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef NONNULL_H
 #define NONNULL_H
 
-#include <assert.h>
+#include "Ptr.h"
 
 template<class T>
 class NonNull
@@ -38,6 +38,12 @@ public:
 	{
 		assert(boolean_test());
 	}
+
+    NonNull(Ptr<T> &ptr)
+      :mPtr(ptr.get())
+    {
+      assert(boolean_test());
+    }
 
 	inline NonNull& operator=(T* ptr)
 	{

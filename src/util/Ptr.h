@@ -29,6 +29,7 @@
 
 //simple pointer wrapper
 #include "safebool.h"
+#include <assert.h>
 
 template<class T>
 class Ptr : public safe_bool < Ptr<T> >
@@ -44,7 +45,7 @@ public:
 	{
 	}
 
-	inline T * get(){return mPtr};
+	inline T * get(){return mPtr;}
 
 	T * operator-> () const // never throws
 	{

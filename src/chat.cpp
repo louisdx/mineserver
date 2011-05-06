@@ -47,32 +47,33 @@ using std::min;
 
 std::vector<std::string> parseCmd(std::string cmd);
 
-bool Chat::sendUserlist(User* user)
-{
-  sendMsg(user, MC_COLOR_BLUE + "[ " + dtos(User::all().size()) + " / " + dtos(Mineserver::get()->config()->iData("system.user_limit")) + " players online ]", USER);
-
-  std::string playerDesc;
-  for (unsigned int i = 0; i < User::all().size(); i++)
-  {
-    if (!User::all()[i]->logged)
-    {
-      continue;
-    }
-    playerDesc += User::all()[i]->nick;
-    if (User::all()[i]->muted)
-    {
-      playerDesc += MC_COLOR_YELLOW + " (muted)";
-    }
-    if (User::all()[i]->dnd)
-    {
-      playerDesc += MC_COLOR_YELLOW + " (dnd)";
-    }
-    playerDesc += ", ";
-  }
-  sendMsg(user, playerDesc, USER);
-
-  return true;
-}
+// TODO support this feature
+//bool Chat::sendUserlist(NonNull<User> user)
+//{
+//  sendMsg(user, MC_COLOR_BLUE + "[ " + dtos(Mineserver::get()->userCount()) + " / " + dtos(Mineserver::get()->config()->iData("system.user_limit")) + " players online ]", USER);
+//
+//  std::string playerDesc;
+//  for (unsigned int i = 0; i < User::all().size(); i++)
+//  {
+//    if (!User::all()[i]->logged)
+//    {
+//      continue;
+//    }
+//    playerDesc += User::all()[i]->nick;
+//    if (User::all()[i]->muted)
+//    {
+//      playerDesc += MC_COLOR_YELLOW + " (muted)";
+//    }
+//    if (User::all()[i]->dnd)
+//    {
+//      playerDesc += MC_COLOR_YELLOW + " (dnd)";
+//    }
+//    playerDesc += ", ";
+//  }
+//  sendMsg(user, playerDesc, USER);
+//
+//  return true;
+//}
 
 std::vector<std::string> parseCmd(std::string cmd)
 {
@@ -108,7 +109,7 @@ std::vector<std::string> parseCmd(std::string cmd)
   return temp;
 }
 
-bool Chat::handleMsg(User* user, std::string msg)
+bool Chat::handleMsg(NonNull<User> user, std::string msg)
 {
   if (msg.empty()) // If the message is empty handle it as if there is no message.
   {
@@ -158,7 +159,7 @@ bool Chat::handleMsg(User* user, std::string msg)
   return true;
 }
 
-void Chat::handleCommand(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleCommand(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
   std::vector<std::string> cmd = parseCmd(msg.substr(1));
   if (!cmd.size() || !cmd[0].size())
@@ -189,7 +190,7 @@ void Chat::handleCommand(User* user, std::string msg, const std::string& timeSta
 }
 
 
-void Chat::handleServerMsg(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleServerMsg(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
   // Decorate server message
   LOG2(INFO, "[!] " + msg.substr(1));
@@ -197,14 +198,14 @@ void Chat::handleServerMsg(User* user, std::string msg, const std::string& timeS
   sendMsg(user, msg, ALL);
 }
 
-void Chat::handleAdminChatMsg(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleAdminChatMsg(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
   LOG2(INFO, "[@] <" + user->nick + "> " + msg.substr(1));
   msg = timeStamp +  MC_COLOR_RED + " [@]" + MC_COLOR_WHITE + " <" + MC_COLOR_DARK_MAGENTA + user->nick + MC_COLOR_WHITE + "> " + msg.substr(1);
   sendMsg(user, msg, ADMINS);
 }
 
-void Chat::handleChatMsg(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleChatMsg(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
   if (user->isAbleToCommunicate("chat") == false)
   {
@@ -231,7 +232,7 @@ void Chat::handleChatMsg(User* user, std::string msg, const std::string& timeSta
   sendMsg(user, msg, ALL);
 }
 
-bool Chat::sendMsg(User* user, std::string msg, MessageTarget action)
+bool Chat::sendMsg(NonNull<User> user, std::string msg, MessageTarget action)
 {
   std::wstring wMsg = stows(msg);
   int strLength = min(kMaxChatMessageLength,wMsg.size());

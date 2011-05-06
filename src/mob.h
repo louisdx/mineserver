@@ -67,7 +67,9 @@ public:
 
   void moveTo(double to_x, double to_y, double to_z, int to_map = -1);
   void look(int16_t yaw, int16_t pitch);
-
+private:
+  static void sendMobSpawn(NonNull<Mob> mob, NonNull<User> user);
+  static void sendTeleportToAll(NonNull<Mob> mob, NonNull<User> user);
 };
 
 class Mobs

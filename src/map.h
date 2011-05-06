@@ -34,6 +34,7 @@
 
 #include "vec.h"
 #include "chunkmap.h"
+#include "util/Ptr.h"
 
 class User;
 
@@ -163,7 +164,7 @@ public:
   }
 
   bool sendPickupSpawn(spawnedItem item);
-  void createPickupSpawn(int x, int y, int z, int type, int count, int health, User* user);
+  void createPickupSpawn(int x, int y, int z, int type, int count, int health, Ptr<User> user);
 
   bool sendProjectileSpawn(User* user, int8_t projID);
 

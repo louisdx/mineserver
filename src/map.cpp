@@ -657,7 +657,7 @@ void Map::spreadLight(int x, int y, int z, int light_value, uint8_t type /* 0: s
     }
     else
     {
-      LOGLF("Loading chunk failed (spreadLight)");
+      //LOGLF("Loading chunk failed (spreadLight)");
       return;
     }
   }
@@ -987,7 +987,7 @@ bool Map::sendPickupSpawn(spawnedItem item)
   return true;
 }
 
-void Map::createPickupSpawn(int x, int y, int z, int type, int count, int health, User* user)
+void Map::createPickupSpawn(int x, int y, int z, int type, int count, int health, Ptr<User> user)
 {
   spawnedItem item;
   item.EID      = Mineserver::generateEID();

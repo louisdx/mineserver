@@ -25,11 +25,6 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-inline std::vector<User*>& Mineserver::users()
-{
-  return m_users;
-}
-
 inline size_t Mineserver::mapCount()
 {
   return mWorlds.size();
@@ -90,4 +85,22 @@ inline Ptr<Map> Mineserver::map(size_t n)
   }
 
   return NULL;
+}
+
+inline size_t Mineserver::userCount() const
+{
+  return m_users.size();
+}
+
+
+inline NonNull<User> Mineserver::userFromIndex(size_t index)
+{
+  assert(index<=userCount());
+
+  return m_users[index].get();
+}
+
+inline NonNull<User> Mineserver::serverUser() const
+{
+  return NonNull<User>(mServerUser.get());
 }

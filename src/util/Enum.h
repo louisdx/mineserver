@@ -34,12 +34,14 @@
 #ifndef ENUM_H
 #define ENUM_H
 
+#include <stdint.h>
+
 #define DeclareEnum(RawName, RealName) \
 class RealName \
 	{ \
 	public: \
-	RealName(RawName mVal = RawName()) : mVal(mVal) {} \
-	explicit RealName(int32_t mVal) : mVal(RawName(mVal)) {} \
+	RealName(RawName val = RawName()) : mVal(val) {} \
+	explicit RealName(int32_t val) : mVal(RawName(val)) {} \
 	RawName mVal; \
 	inline operator int32_t() const { return mVal; } \
 	}
@@ -48,8 +50,8 @@ class RealName \
 class RealName \
 	{ \
 	public: \
-	RealName(RawName mVal = RawName()) : mVal(mVal) {} \
-	explicit RealName(int32_t mVal) : mVal(RawName(mVal)) {} \
+	RealName(RawName val = RawName()) : mVal(val) {} \
+	explicit RealName(int32_t val) : mVal(RawName(val)) {} \
 	RawName mVal; \
 	inline operator int32_t() const { return mVal; } \
 	inline void operator++(){mVal = RawName(int32_t(mVal)+1);} \
@@ -64,8 +66,8 @@ class RealName \
 class RealName \
 	{ \
 	public: \
-	RealName(RawName mVal = RawName()) : mVal(mVal) {} \
-	explicit RealName(bool mVal) : mVal(RawName(mVal)) {} \
+	RealName(RawName val = RawName()) : mVal(val) {} \
+	explicit RealName(bool val) : mVal(RawName(val)) {} \
 	RawName mVal; \
 	inline operator bool() const { return mVal; } \
 	inline RealName operator!(RealName bState) \

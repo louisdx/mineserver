@@ -58,8 +58,6 @@ struct position
 class User
 {
 public:
-
-  User(int sock, uint32_t EID);
   ~User();
 
   int fd;
@@ -78,7 +76,7 @@ public:
   int16_t health;
   uint16_t timeUnderwater;
   double fallDistance;
-  unsigned int UID;
+  unsigned int const UID;
   std::string nick;
   std::string temp_nick;
   position pos;
@@ -92,6 +90,8 @@ public:
   //More info on the inventory
   OpenInventory openInv;
 
+  bool mQueuedForDelete;
+
   bool serverAdmin;
   int permissions; // bitmask for permissions. See permissions.h
 
@@ -100,10 +100,6 @@ public:
   //Input buffer
   Packet buffer;
   Packet loginBuffer; // Used to send all login info at once
-
-  static std::vector<User*>& all();
-  static bool isUser(int sock);
-  static User* byNick(std::string nick);
 
   bool changeNick(std::string _nick);
   void checkEnvironmentDamage();
@@ -189,6 +185,11 @@ public:
   struct event* GetEvent();
 
 private:
+  void destructorActions();
+  // only mineserver can create users!
+  friend class Mineserver;
+  User(int sock, uint32_t EID);
+
   event m_event;
 
   // Item currently in hold

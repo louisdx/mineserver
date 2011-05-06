@@ -58,6 +58,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <boost/bind.hpp>
 
 #include "constants.h"
 #include "mineserver.h"
@@ -262,7 +263,8 @@ Mineserver::Mineserver()
      m_furnaceManager(NULL),
      m_packetHandler (NULL),
      m_inventory     (NULL),
-     m_mobs          (NULL)
+     m_mobs          (NULL),
+     mServerUser(new User(-1, SERVER_CONSOLE_UID))
 {
   memset(&m_listenEvent, 0, sizeof(event));
   initConstants();
@@ -457,30 +459,69 @@ event_base* Mineserver::getEventBase()
   return m_eventBase;
 }
 
+void saveAllPlayers(NonNull<User> user)
+{
+  if (user->logged)
+  {
+    user->saveData();
+  }
+}
+
 void Mineserver::saveAll()
 {
   for (int i = 0; i < mWorlds.size(); i++)
   {
     mWorlds[i]->m_map->saveWholeMap();
   }
-  saveAllPlayers();
+  forEachUser(&saveAllPlayers);
 }
 
-void Mineserver::saveAllPlayers()
+bool shouldRemoveUser(time_t timeNow, NonNull<User const> const user)
 {
-  if (users().empty())
+  if(user->mQueuedForDelete)
   {
-    return;
+    return true;
   }
-  for (int i = int(users().size()) - 1; i >= 0; i--)
+  // No data received in 30s, timeout
+  if (user->logged && (timeNow - user->lastData) > 30)
   {
-    if (users()[i]->logged)
-    {
-      users()[i]->saveData();
-    }
+    LOG2(INFO, "Player " + user->nick + " timed out");
+
+    return true;
+  }
+  else if (!user->logged && (timeNow - user->lastData) > 100)
+  {
+    return true;
+  }
+  return false;
+}
+
+void updateUser(bool damageEnabled, NonNull<User> user)
+{
+  if (damageEnabled)
+  {
+    user->checkEnvironmentDamage();
+  }
+  user->pushMap();
+  user->popMap();
+
+  // Underwater check / drowning
+  // ToDo: this could be done a bit differently? - Fador
+  // -- User::all() == users() - louisdx
+  user->isUnderwater();
+  if (user->pos.y < 0)
+  {
+    user->sethealth(user->health - 5);
   }
 }
 
+void sendServerTimeToUser(int64_t mapTime, NonNull<User> user)
+{
+    // Send server time
+    Packet pkt;
+    pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)mapTime;
+    user->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
+}
 
 bool Mineserver::run()
 {
@@ -693,14 +734,7 @@ bool Mineserver::run()
         m_lastSave = timeNow;
       }
 
-      // If users, ping them
-      if (!User::all().empty())
-      {
-        // Send server time
-        Packet pkt;
-        pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)mWorlds[0]->m_map->mapTime;
-        User::all()[0]->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
-      }
+      Mineserver::get()->forEachUser(boost::bind(&sendServerTimeToUser,mWorlds[0]->m_map->mapTime,_1));
 
       //Check for tree generation from saplings
       for (std::vector<Map*>::size_type i = 0; i < mWorlds.size(); i++)
@@ -719,30 +753,9 @@ bool Mineserver::run()
     {
       tick = (uint32_t)timeNow;
       // Loop users
-      for (int i = int(users().size()) - 1; i >= 0; i--)
-      {
-        // No data received in 30s, timeout
-        if (users()[i]->logged && (timeNow - users()[i]->lastData) > 30)
-        {
-          LOG2(INFO, "Player " + users()[i]->nick + " timed out");
 
-          delete users()[i];
-        }
-        else if (!users()[i]->logged && (timeNow - users()[i]->lastData) > 100)
-        {
-          delete users()[i];
-        }
-        else
-        {
-          if (m_damage_enabled)
-          {
-            users()[i]->checkEnvironmentDamage();
-          }
-          users()[i]->pushMap();
-          users()[i]->popMap();
-        }
-
-      }
+      // removed disconnected users
+      forEachUserRemoveIfTrue(boost::bind(&shouldRemoveUser,timeNow,_1));
 
       for (std::vector<Map*>::size_type i = 0 ; i < mWorlds.size(); i++)
       {
@@ -753,30 +766,14 @@ bool Mineserver::run()
         }
       }
 
-
-      for (int i = int(users().size()) - 1; i >= 0; i--)
-      {
-        users()[i]->pushMap();
-        users()[i]->popMap();
-      }
+      // allowed to modify users, but not delete them!
+      forEachUser(boost::bind(&updateUser,m_damage_enabled,_1));
 
       // Check for Furnace activity
       furnaceManager()->update();
 
       // Run 1s timer hook
       static_cast<Hook0<bool>*>(plugin()->getHook("Timer1000"))->doAll();
-    }
-
-    // Underwater check / drowning
-    // ToDo: this could be done a bit differently? - Fador
-    // -- User::all() == users() - louisdx
-    for (size_t i = 0; i < users().size(); ++i)
-    {
-      users()[i]->isUnderwater();
-      if (users()[i]->pos.y < 0)
-      {
-        users()[i]->sethealth(users()[i]->health - 5);
-      }
     }
   }
 
@@ -879,4 +876,88 @@ uint32_t Mineserver::generateEID()
 {
   static uint32_t m_EID = 0;
   return ++m_EID;
+}
+
+void voidSharedToNonNull(boost::function<void(NonNull<User>)> func, boost::shared_ptr<User> user)
+{
+  NonNull<User> nonNull(user.get());
+  func(nonNull);
+}
+
+void Mineserver::forEachUser(boost::function<void(NonNull<User>)> func)
+{
+  std::for_each(m_users.begin(),m_users.end(),boost::bind(&voidSharedToNonNull,func,_1));
+}
+
+bool boolSharedToNonNull(boost::function<bool(NonNull<User const> const)> func, boost::shared_ptr<User> user)
+{
+  return func(NonNull<User const>(user.get()));
+}
+
+void Mineserver::forEachUserRemoveIfTrue(boost::function<bool(NonNull<User const> const)> func)
+{
+  std::vector< boost::shared_ptr<User> >::iterator new_end = std::remove_if(m_users.begin(),m_users.end(),boost::bind(&boolSharedToNonNull,func,_1));
+
+  for(std::vector< boost::shared_ptr<User> >::iterator itr = new_end;
+    itr != m_users.end();
+    ++itr)
+  {
+    (*itr)->destructorActions();
+  }
+  m_users.erase(new_end, m_users.end());
+}
+
+Ptr<User> Mineserver::userFromName(std::string user, bool caseSensative)
+{
+  std::string nick = caseSensative ? user : strToLower(user);
+  for (unsigned int i = 0; i < m_users.size(); i++)
+  {
+    if (m_users[i]->fd && m_users[i]->logged)
+    {
+      std::string currentNick = caseSensative ? m_users[i]->nick : strToLower(m_users[i]->nick);
+      // Don't send to his user if he is DND and the message is a chat message
+      if (nick == currentNick)
+      {
+        return Ptr<User>(m_users[i].get());
+      }
+    }
+  }
+  return Ptr<User>();
+}
+
+NonNull<User> Mineserver::createUser(int sock)
+{
+  boost::shared_ptr<User> newUser(new User(sock,Mineserver::generateEID()));
+  m_users.push_back(newUser);
+
+  return NonNull<User>(newUser.get());
+}
+
+Ptr<User> Mineserver::userFromEID(unsigned int EID)
+{
+  for (unsigned int i = 0; i < m_users.size(); i++)
+  {
+    if (m_users[i]->fd && m_users[i]->logged)
+    {
+      if (EID == m_users[i]->UID)
+      {
+        return Ptr<User>(m_users[i].get());
+      }
+    }
+  }
+  return Ptr<User>();
+}
+
+// returns the first user where condition returns true
+Ptr<User> Mineserver::findUser(boost::function<bool(NonNull<User>)> condition)
+{
+  for (unsigned int i = 0; i < m_users.size(); i++)
+  {
+    NonNull<User> currentUser(m_users[i].get());
+    if (condition(currentUser))
+    {
+      return currentUser.get();
+    }
+  }
+  return Ptr<User>();
 }

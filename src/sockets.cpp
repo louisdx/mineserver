@@ -99,7 +99,7 @@ void client_callback(int fd,
     {
       LOG2(INFO, "Socket closed properly");
 
-      delete user;
+      user->mQueuedForDelete=true;
       user = (User*)1;
       return;
     }
@@ -108,7 +108,7 @@ void client_callback(int fd,
     {
       LOG2(INFO, "Socket had no data to read");
 
-      delete user;
+      user->mQueuedForDelete=true;
       user = (User*)2;
       return;
     }
@@ -139,7 +139,7 @@ void client_callback(int fd,
 
         if (disconnecting) // disconnect -- player gone
         {
-          delete user;
+          user->mQueuedForDelete=true;
           user = (User*)4;
           return;
         }
@@ -150,7 +150,7 @@ void client_callback(int fd,
         str << "Unknown action: 0x" << std::hex << user->action;
         LOG2(DEBUG, str.str());
 
-        delete user;
+        user->mQueuedForDelete=true;
         user = (User*)3;
         return;
       }
@@ -187,7 +187,7 @@ void client_callback(int fd,
       {
         LOG2(ERROR, "Error writing to client, tried to write " + dtos(writeLen) + " bytes, code: " + dtos(ERROR_NUMBER));
 
-        delete user;
+        user->mQueuedForDelete=true;
         user = (User*)5;
         return;
       }
@@ -232,10 +232,11 @@ void accept_callback(int fd,
     LOGLF("Client: accept() failed");
     return;
   }
-  User* client = new User(client_fd, Mineserver::generateEID());
+
+  NonNull<User> client(Mineserver::get()->createUser(client_fd));
   setnonblock(client_fd);
 
-  event_set(client->GetEvent(), client_fd, EV_WRITE | EV_READ, client_callback, client);
+  event_set(client->GetEvent(), client_fd, EV_WRITE | EV_READ, client_callback, client.get());
   event_add(client->GetEvent(), NULL);
 
 }
