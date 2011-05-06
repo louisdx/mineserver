@@ -101,20 +101,20 @@ std::auto_ptr< std::list<std::string> > ConfigNode::keys(int type)
 {
   std::auto_ptr< std::list<std::string> > keys( new std::list<std::string> );
 
-  for (std::map<std::string, ConfigNode*>::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
+  for (std::map<std::string, boost::shared_ptr<ConfigNode> >::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
   {
     if ((type == CONFIG_NODE_UNDEFINED) || (it->second->type() == type))
     {
-      keys.push_back(it->first);
+      keys->push_back(it->first);
     }
 
     if (it->second->type() == CONFIG_NODE_LIST)
     {
-      std::auto_ptr< std::list<std::string> > tmp_list(iter_a->second->keys(type));
+      std::auto_ptr< std::list<std::string> > tmp_list(it->second->keys(type));
 
-      for (std::list<std::string>::const_iterator tmp_iter = tmp_list.begin(); tmp_iter != tmp_list.end(); ++tmp_iter)
+      for (std::list<std::string>::const_iterator tmp_iter = tmp_list->begin(); tmp_iter != tmp_list->end(); ++tmp_iter)
       {
-        keys.push_back(it->first + "." + *tmp_iter);
+        keys->push_back(it->first + "." + *tmp_iter);
       }
     }
   }
@@ -325,7 +325,7 @@ void ConfigNode::dump(int indent) const
   {
     std::cout << "list:\n";
 
-    for (std::map<std::string, ConfigNode*>::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
+    for (std::map<std::string, boost::shared_ptr<ConfigNode> >::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
     {
       for (int i = 0; i < indent + 1; ++i)
       {

@@ -43,10 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/scoped_array.hpp"
 using std::min;
 
-Chat::Chat()
-{
-}
-
 using std::min;
 
 std::vector<std::string> parseCmd(std::string cmd);

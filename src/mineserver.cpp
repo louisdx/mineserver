@@ -359,7 +359,7 @@ bool Mineserver::init()
     std::auto_ptr< std::list<std::string> > tmp(m_config->mData(key)->keys());
 
     int n = 0;
-    for (std::list<std::string>::const_iterator it = tmp.begin(); it != tmp.end(); ++it)
+    for (std::list<std::string>::const_iterator it = tmp->begin(); it != tmp->end(); ++it)
     {
       boost::shared_ptr<World> newWorld(new World());
       newWorld->m_map.reset(new Map());

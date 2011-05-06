@@ -29,7 +29,7 @@
 #define _PLUGIN_H
 
 #include <string>
-#include <tr1/unordered_map>
+#include <boost/tr1/unordered_map.hpp>
 #include <vector>
 #include <ctime>
 

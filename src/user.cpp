@@ -274,7 +274,7 @@ bool User::sendLoginInfo()
   // Teleport player (again)
   teleport(pos.x, pos.y + 2, pos.z);
 
-  Mineserver::get()->chat()->sendMsg(this, nick + " connected!", Chat::ALL);
+  Chat::sendMsg(this, nick + " connected!", Chat::ALL);
 
   sethealth(health);
   logged = true;

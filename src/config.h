@@ -31,7 +31,7 @@
 #include <string>
 #include <list>
 #include <stdint.h>
-#include <tr1/memory>
+#include <boost/tr1/memory.hpp>
 
 #include "config/parser.h"
 #include "config/node.h"
@@ -52,12 +52,12 @@ public:
 
   inline bool load(const std::string& file) const
   {
-    return m_parser->parse(file, m_root.get());
+    return m_parser->parse(file, m_root);
   }
 
   inline bool load(const std::istream& data) const
   {
-    return m_parser->parse(data, m_root.get());
+    return m_parser->parse(data, m_root);
   }
 
   inline void dump() const
@@ -100,9 +100,9 @@ public:
     return m_root->has(key) ? m_root->get(key, false)->bData() : false;
   }
 
-  inline ConfigNode* mData(const std::string& key)
+  inline boost::shared_ptr<ConfigNode> mData(const std::string& key)
   {
-    return m_root->has(key) ? m_root->get(key, false) : NULL;
+    return m_root->has(key) ? m_root->get(key, false) : boost::shared_ptr<ConfigNode>();
   }
 
   inline bool has(const std::string& key) const
@@ -115,7 +115,7 @@ public:
     return m_root->has(key) ? m_root->get(key)->type() : CONFIG_NODE_UNDEFINED;
   }
 
-  inline std::list<std::string> keys(int type = CONFIG_NODE_UNDEFINED) const
+  inline std::auto_ptr< std::list<std::string> > keys(int type = CONFIG_NODE_UNDEFINED) const
   {
     return m_root->keys();
   }

@@ -78,7 +78,8 @@ Map::Map(const Map& oldmap)
 }
 
 Map::Map()
-  chunks(441) // buckets!
+:
+chunks(441) // buckets!
 {
   std::fill(emitLight, emitLight + 256, 0);
 

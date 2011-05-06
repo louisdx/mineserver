@@ -307,7 +307,7 @@ void readConfig()
   {
     std::auto_ptr< std::list<std::string> > tmp(Mineserver::get()->config()->mData(key)->keys());
 
-    for (std::list<std::string>::const_iterator it = tmp.begin(); it != tmp.end(); ++it)
+    for (std::list<std::string>::const_iterator it = tmp->begin(); it != tmp->end(); ++it)
     {
       int input = Mineserver::get()->config()->iData(key + "." + *it + ".in");
       createList[input].output = Mineserver::get()->config()->iData(key + "." + *it + ".out");
