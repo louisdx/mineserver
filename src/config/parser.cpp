@@ -54,7 +54,7 @@ ConfigParser::ConfigParser()
   m_includes = 0;
 }
 
-bool ConfigParser::parse(const std::string& file, boost::shared_ptr<ConfigNode> ptr)
+bool ConfigParser::parse(const std::string& file, ConfigNode::Ptr ptr)
 {
   struct stat st;
   std::ifstream ifs;
@@ -79,11 +79,12 @@ bool ConfigParser::parse(const std::string& file, boost::shared_ptr<ConfigNode> 
   return ret;
 }
 
-bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode> ptr)
+bool ConfigParser::parse(const std::istream& data, ConfigNode::Ptr ptr)
 {
   std::stack< boost::shared_ptr <std::pair<int, std::string> > > m_tokenStack;
   ConfigScanner scanner;
-  boost::shared_ptr<ConfigNode> root = ptr;
+
+  ConfigNode::Ptr root = ptr;
 
   // that's ugly!
   std::stringstream ss;
@@ -98,9 +99,11 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
   int token_type;
   std::string token_data;
   std::string token_label;
-  std::deque< boost::shared_ptr<ConfigNode> > nodeStack;
-  boost::shared_ptr<ConfigNode> currentNode = root;
+
+  std::deque<ConfigNode::Ptr> nodeStack;
+  ConfigNode::Ptr currentNode = root;
   nodeStack.push_back(currentNode);
+
   while (get_token(&scanner,&m_tokenStack,&token_type, &token_data))
   {
     if (!token_type)
@@ -110,7 +113,7 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
     }
 
     // Include other files only if we're in the root node
-    if ((token_type == CONFIG_TOKEN_ENTITY) && (token_data == "include") && (currentNode == root))
+    if (token_type == CONFIG_TOKEN_ENTITY && token_data == "include" && currentNode == root)
     {
       int tmp_type;
       std::string tmp_data;
@@ -134,8 +137,8 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
 
         // prepend home path
         const std::string var  = "system.path.home";
-        boost::shared_ptr<ConfigNode>     node = root->get(var, false);
-        std::string       home;
+        const ConfigNode::Ptr node = root->get(var, false);
+        std::string home;
         if (!node || (home = node->sData()).empty())
         {
           std::cerr << "include directive is not allowed before: " << var << "\n";
@@ -159,27 +162,25 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
       }
     }
 
-    if ((token_type == CONFIG_TOKEN_ENTITY) || (token_type == CONFIG_TOKEN_LABEL))
+    if (token_type == CONFIG_TOKEN_ENTITY || token_type == CONFIG_TOKEN_LABEL)
     {
-      token_label.assign(token_data);
+      token_label = token_data;
     }
 
-    if (token_type == CONFIG_TOKEN_OPERATOR_ASSIGN)
+    else if (token_type == CONFIG_TOKEN_OPERATOR_ASSIGN)
     {
       if (currentNode != root)
       {
         currentNode->clear();
       }
     }
-
-    // This doesnt make any sense, it needs to be rewritten! TODO BUG HACK
-    if (token_type == CONFIG_TOKEN_BOOLEAN)
+    else if (token_type == CONFIG_TOKEN_BOOLEAN)
     {
-      boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
+      ConfigNode::Ptr newNode(!token_label.empty() && currentNode->has(token_label) ? currentNode->get(token_label) : ConfigNode::Ptr(new ConfigNode));
 
       newNode->setData(token_data == "true");
 
-      if (token_label.size())
+      if (!token_label.empty())
       {
         currentNode->set(token_label, newNode, true);
         token_label.clear();
@@ -190,13 +191,13 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
       }
     }
 
-    if (token_type == CONFIG_TOKEN_STRING)
+    else if (token_type == CONFIG_TOKEN_STRING)
     {
-      boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
+      ConfigNode::Ptr newNode(!token_label.empty() && currentNode->has(token_label) ? currentNode->get(token_label) : ConfigNode::Ptr(new ConfigNode));
 
       newNode->setData(token_data);
 
-      if (token_label.size())
+      if (!token_label.empty())
       {
         currentNode->set(token_label, newNode, true);
         token_label.clear();
@@ -207,13 +208,13 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
       }
     }
 
-    if (token_type == CONFIG_TOKEN_NUMBER)
+    else if (token_type == CONFIG_TOKEN_NUMBER)
     {
-      boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
+      ConfigNode::Ptr newNode(token_label.size() && currentNode->has(token_label) ? currentNode->get(token_label) : ConfigNode::Ptr(new ConfigNode));
 
       newNode->setData((double)::atof(token_data.c_str()));
 
-      if (token_label.size())
+      if (!token_label.empty())
       {
         currentNode->set(token_label, newNode, true);
         token_label.clear();
@@ -224,13 +225,13 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
       }
     }
 
-    if (token_type == CONFIG_TOKEN_LIST_OPEN)
+    else if (token_type == CONFIG_TOKEN_LIST_OPEN)
     {
-      boost::shared_ptr<ConfigNode> newNode = (token_label.size() && currentNode->has(token_label)) ? currentNode->get(token_label) : boost::shared_ptr<ConfigNode>(new ConfigNode());
+      ConfigNode::Ptr newNode(token_label.size() && currentNode->has(token_label) ? currentNode->get(token_label) : ConfigNode::Ptr(new ConfigNode));
 
       newNode->setType(CONFIG_NODE_LIST);
 
-      if (token_label.size())
+      if (!token_label.empty())
       {
         currentNode->set(token_label, newNode, true);
 
@@ -247,7 +248,7 @@ bool ConfigParser::parse(const std::istream& data, boost::shared_ptr<ConfigNode>
       currentNode = newNode;
     }
 
-    if (token_type == CONFIG_TOKEN_LIST_CLOSE)
+    else if (token_type == CONFIG_TOKEN_LIST_CLOSE)
     {
       currentNode = nodeStack.back();
       nodeStack.pop_back();

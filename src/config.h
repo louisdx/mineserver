@@ -65,9 +65,9 @@ public:
     m_root->dump();
   }
 
-  inline ConfigNode* root() const
+  inline ConfigNode::Ptr root() const
   {
-    return m_root.get();
+    return m_root;
   }
 
   inline int iData(const std::string& key)
@@ -122,7 +122,7 @@ public:
 
 private:
   std::tr1::shared_ptr<ConfigParser> m_parser;
-  std::tr1::shared_ptr<ConfigNode>   m_root;
+  ConfigNode::Ptr m_root;
 };
 
 #endif

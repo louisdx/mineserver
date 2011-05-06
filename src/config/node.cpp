@@ -33,77 +33,21 @@
 
 #include "node.h"
 
-ConfigNode::ConfigNode() : m_type(0), m_index(0), m_nData(0)
+ConfigNode::ConfigNode()
+  :
+  m_type(0),
+  m_index(0),
+  m_nData(0)
 {
 }
 
-bool ConfigNode::bData() const
-{
-  bool tmp = false;
-  if (m_type == CONFIG_NODE_BOOLEAN)
-  {
-    tmp = m_nData != 0.0;
-  }
-  return tmp;
-}
-
-int ConfigNode::iData() const
-{
-  if (m_type == CONFIG_NODE_NUMBER)
-  {
-    return (int)m_nData;
-  }
-  return 0;
-}
-
-int64_t ConfigNode::lData() const
-{
-  if (m_type == CONFIG_NODE_NUMBER)
-  {
-    return (int64_t)m_nData;
-  }
-  return 0;
-}
-
-float ConfigNode::fData() const
-{
-  if (m_type == CONFIG_NODE_NUMBER)
-  {
-    return (float)m_nData;
-  }
-  return 0.0f;
-}
-
-double ConfigNode::dData() const
-{
-  if (m_type == CONFIG_NODE_NUMBER)
-  {
-    return m_nData;
-  }
-  return 0.0;
-}
-
-std::string ConfigNode::sData() const
-{
-  std::string tmp("");
-  if (m_type == CONFIG_NODE_STRING)
-  {
-    tmp.assign(m_sData);
-  }
-  else
-  {
-    tmp.clear();
-  }
-  return tmp;
-}
-
-std::auto_ptr< std::list<std::string> > ConfigNode::keys(int type)
+std::auto_ptr< std::list<std::string> > ConfigNode::keys(int type) const
 {
   std::auto_ptr< std::list<std::string> > keys( new std::list<std::string> );
 
-  for (std::map<std::string, boost::shared_ptr<ConfigNode> >::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
+  for (Map::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
   {
-    if ((type == CONFIG_NODE_UNDEFINED) || (it->second->type() == type))
+    if (type == CONFIG_NODE_UNDEFINED || it->second->type() == type)
     {
       keys->push_back(it->first);
     }
@@ -122,90 +66,34 @@ std::auto_ptr< std::list<std::string> > ConfigNode::keys(int type)
   return keys;
 }
 
-void ConfigNode::setData(bool data)
-{
-  m_type = CONFIG_NODE_BOOLEAN;
-  m_nData = (double)data;
-}
-
-void ConfigNode::setData(int data)
-{
-  m_type = CONFIG_NODE_NUMBER;
-  m_nData = (double)data;
-}
-
-void ConfigNode::setData(int64_t data)
-{
-  m_type = CONFIG_NODE_NUMBER;
-  m_nData = (double)data;
-}
-
-void ConfigNode::setData(float data)
-{
-  m_type = CONFIG_NODE_NUMBER;
-  m_nData = (double)data;
-}
-
-void ConfigNode::setData(double data)
-{
-  m_type = CONFIG_NODE_NUMBER;
-  m_nData = (double)data;
-}
-
-void ConfigNode::setData(const std::string& data)
-{
-  m_type = CONFIG_NODE_STRING;
-  m_sData.assign(data);
-}
-
-int ConfigNode::type() const
-{
-  return m_type;
-}
-
-void ConfigNode::setType(int type)
-{
-  m_type = type;
-}
-
-bool ConfigNode::has(const std::string& key)
+bool ConfigNode::has(const std::string& key) const
 {
   if (m_type != CONFIG_NODE_LIST)
   {
     return false;
   }
 
-  size_t pos = key.find('.');
+  const size_t pos = key.find('.');
 
   if (pos != std::string::npos)
   {
     const std::string keyA(key.substr(0, pos));
     const std::string keyB(key.substr(pos + 1));
 
-    if (m_list.count(keyA) == 0)
-    {
-      return false;
-    }
-    else
-    {
-      return m_list[keyA]->has(keyB);
-    }
-  }
-  else if (m_list.count(key) == 1)
-  {
-    return true;
+    const Map::const_iterator it = m_list.find(keyA);
+    return it == m_list.end() ? false : it->second->has(keyB);
   }
   else
   {
-    return false;
+    return m_list.count(key) > 0;
   }
 }
 
-boost::shared_ptr<ConfigNode> ConfigNode::get(const std::string& key, bool createMissing)
+ConfigNode::Ptr ConfigNode::get(const std::string& key, bool createMissing)
 {
   if (m_type != CONFIG_NODE_LIST)
   {
-    return boost::shared_ptr<ConfigNode>();
+    return Ptr();
   }
 
   size_t pos = key.find('.');
@@ -214,42 +102,38 @@ boost::shared_ptr<ConfigNode> ConfigNode::get(const std::string& key, bool creat
   {
     std::string keyA(key.substr(0, pos));
     std::string keyB(key.substr(pos + 1));
-    boost::shared_ptr<ConfigNode> tmp;
 
-    if (m_list.count(keyA))
+    const Map::const_iterator it = m_list.find(keyA);
+
+    if (it != m_list.end())
     {
-      tmp = m_list[keyA];
+      return it->second->get(keyB, createMissing);
+    }
+    else if (createMissing == false)
+    {
+      return Ptr();
     }
     else
     {
-      if (createMissing == false)
-      {
-        return boost::shared_ptr<ConfigNode>();
-      }
-      else
-      {
-        tmp = boost::shared_ptr<ConfigNode>(new ConfigNode());
-        m_list[keyA] = tmp;
-      }
+      return m_list.insert(Map::value_type(keyA, boost::shared_ptr<ConfigNode>(new ConfigNode))).first->second->get(keyB, createMissing);
     }
-
-    return tmp->get(keyB, createMissing);
   }
   else
   {
-    if (m_list.count(key) == 0)
-    {
-      if (createMissing == true)
-      {
-        m_list[key] = boost::shared_ptr<ConfigNode>(new ConfigNode());
-      }
-      else
-      {
-        return boost::shared_ptr<ConfigNode>();
-      }
-    }
+    const Map::const_iterator it = m_list.find(key);
 
-    return m_list[key];
+    if (it != m_list.end())
+    {
+      return it->second;
+    }
+    else if (createMissing == false)
+    {
+      return Ptr();
+    }
+    else
+    {
+      return m_list.insert(Map::value_type(key, Map::mapped_type(new ConfigNode))).first->second;
+    }
   }
 }
 
@@ -264,7 +148,9 @@ bool ConfigNode::set(const std::string& key, boost::shared_ptr<ConfigNode> ptr, 
     const std::string keyA(key.substr(0, pos));
     const std::string keyB(key.substr(pos + 1));
 
-    if (m_list.count(keyA) == 0)
+    const Map::const_iterator it = m_list.find(keyA);
+
+    if (it == m_list.end())
     {
       if (createMissing == false)
       {
@@ -272,29 +158,28 @@ bool ConfigNode::set(const std::string& key, boost::shared_ptr<ConfigNode> ptr, 
       }
       else
       {
-        m_list[keyA] = boost::shared_ptr<ConfigNode>(new ConfigNode);
+        return m_list.insert(Map::value_type(keyA, Map::mapped_type(new ConfigNode))).first->second->set(keyB, ptr, createMissing);
       }
     }
-
-    return m_list[keyA]->set(keyB, ptr, createMissing);
+    else
+    {
+      return it->second->set(keyB, ptr, createMissing);
+    }
   }
   else
   {
-    m_index++;
-    // WARNING: Shouldn't the old node be deleted here?
+    ++m_index;
     m_list[key] = ptr;
     return true;
   }
 }
 
-bool ConfigNode::add(boost::shared_ptr<ConfigNode> ptr)
+bool ConfigNode::add(ConfigNode::Ptr ptr)
 {
-  std::string key;
   std::stringstream ss;
   ss << m_index;
-  ss >> key;
 
-  return set(key, ptr);
+  return set(ss.str(), ptr);
 }
 
 void ConfigNode::clear()
@@ -302,7 +187,6 @@ void ConfigNode::clear()
   m_type = 0;
   m_nData = 0;
   m_sData.clear();
-  // WARNING: Shouldn't those nodes be deleted before m_list is clear()ed?
   m_list.clear();
 }
 
@@ -325,7 +209,8 @@ void ConfigNode::dump(int indent) const
   {
     std::cout << "list:\n";
 
-    for (std::map<std::string, boost::shared_ptr<ConfigNode> >::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
+
+    for (Map::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
     {
       for (int i = 0; i < indent + 1; ++i)
       {
