@@ -149,8 +149,8 @@ Map::~Map()
   items.clear();
   std::string infile = mapDirectory + "/level.dat";
 
-  NBT_Value* root = NBT_Value::LoadFromFile(infile);
-  if (root != NULL)
+  std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
+  if (root.get() != NULL)
   {
     NBT_Value& data = *((*root)["Data"]);
 
@@ -179,8 +179,6 @@ Map::~Map()
     }
 
     root->SaveToFile(infile);
-
-    delete root;
   }
 }
 
@@ -303,7 +301,7 @@ void Map::init(int number)
     }
   }
 
-  NBT_Value* root = NBT_Value::LoadFromFile(infile);
+  std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
   NBT_Value& data = *((*root)["Data"]);
 
   spawnPos.x() = (int32_t) * data["SpawnX"];
@@ -368,8 +366,6 @@ void Map::init(int number)
 
   // Init mapgenerator
   Mineserver::get()->mapGen(m_number)->re_init((int32_t)mapSeed);
-
-  delete root;
 }
 
 sChunk* Map::getMapData(int x, int z,  bool generate)
@@ -394,8 +390,8 @@ bool Map::saveWholeMap()
 
   std::string infile = mapDirectory + "/level.dat";
 
-  NBT_Value* root = NBT_Value::LoadFromFile(infile);
-  if (root != NULL)
+  std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
+  if (root.get() != NULL)
   {
     NBT_Value& data = *((*root)["Data"]);
 
@@ -426,8 +422,6 @@ bool Map::saveWholeMap()
       }
     }
     root->SaveToFile(infile);
-
-    delete root;
   }
 
   return true;
@@ -1109,8 +1103,8 @@ sChunk* Map::loadMap(int x, int z, bool generate)
             //Store new spawn position to level.dat
             spawnPos.y() = new_y + 1;
             std::string infile = mapDirectory + "/level.dat";
-            NBT_Value* root = NBT_Value::LoadFromFile(infile);
-            if (root != NULL)
+            std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
+            if (root.get() != NULL)
             {
               NBT_Value& data = *((*root)["Data"]);
               *data["SpawnX"] = (int32_t)spawnPos.x();
@@ -1118,8 +1112,6 @@ sChunk* Map::loadMap(int x, int z, bool generate)
               *data["SpawnZ"] = (int32_t)spawnPos.z();
 
               root->SaveToFile(infile);
-
-              delete root;
             }
           }
         }

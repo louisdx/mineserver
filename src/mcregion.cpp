@@ -552,9 +552,9 @@ bool convertMap(std::string mapDir)
               filename = mapDir + "/" + files[i] + "/" + files2[ii] + "/" + files3[j];
 
               //Load chunk file
-              NBT_Value* chunk = NBT_Value::LoadFromFile(filename);
+              std::auto_ptr<NBT_Value> chunk = NBT_Value::LoadFromFile(filename);
 
-              if (chunk == NULL)
+              if (chunk.get() == NULL)
               {
                 continue;
               }
@@ -563,7 +563,6 @@ bool convertMap(std::string mapDir)
 
               if (level == NULL)
               {
-                delete chunk;
                 continue;
               }
 
@@ -613,7 +612,6 @@ bool convertMap(std::string mapDir)
                   std::cout << "Chunk saving error at " << x << "," << z << std::endl;
                 }
               }
-              delete chunk;
             }
           }
           std::cout << ".";

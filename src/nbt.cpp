@@ -524,12 +524,12 @@ void NBT_Value::cleanup()
   m_type = TAG_END;
 }
 
-NBT_Value* NBT_Value::LoadFromFile(const std::string& filename)
+std::auto_ptr<NBT_Value> NBT_Value::LoadFromFile(const std::string& filename)
 {
   FILE* fp = fopen(filename.c_str(), "rb");
   if (fp == NULL)
   {
-    return NULL;
+    return std::auto_ptr<NBT_Value>();
   }
   fseek(fp, -4, SEEK_END);
   uint32_t uncompressedSize = 0;
@@ -561,7 +561,7 @@ NBT_Value* NBT_Value::LoadFromFile(const std::string& filename)
   gzFile nbtFile = gzopen(filename.c_str(), "rb");
   if (nbtFile == NULL)
   {
-    return NULL;
+    return std::auto_ptr<NBT_Value>();
   }
   gzread(nbtFile, uncompressedData.get(), uncompressedSize);
   gzclose(nbtFile);
@@ -569,9 +569,7 @@ NBT_Value* NBT_Value::LoadFromFile(const std::string& filename)
   uint8_t* ptr = uncompressedData.get() + 3; // Jump blank compound
   int remaining = uncompressedSize;
 
-  NBT_Value* root = new NBT_Value(TAG_COMPOUND, &ptr, remaining);
-
-  return root;
+  return std::auto_ptr<NBT_Value>(new NBT_Value(TAG_COMPOUND, &ptr, remaining));
 }
 
 NBT_Value* NBT_Value::LoadFromMemory(uint8_t* buffer, uint32_t len)

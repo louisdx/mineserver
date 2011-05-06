@@ -283,9 +283,9 @@ bool User::loadData()
     return false;
   }
 
-  NBT_Value*  playerRoot = NBT_Value::LoadFromFile(infile.c_str());
+  std::auto_ptr<NBT_Value>  playerRoot = NBT_Value::LoadFromFile(infile.c_str());
   NBT_Value& nbtPlayer = *playerRoot;
-  if (playerRoot == NULL)
+  if (playerRoot.get() == NULL)
   {
     LOGLF("Failed to open player file");
     return false;
@@ -342,7 +342,6 @@ bool User::loadData()
       inv[(uint8_t)8 + (100 - slot)].setType(item_id);
     }
   }
-  delete playerRoot;
 
   return true;
 }
