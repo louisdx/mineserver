@@ -78,7 +78,7 @@ inline uint64_t ntohll(uint64_t v)
 inline std::wstring hsttonst(std::wstring v)
 {
   std::wstring outBuffer = L"";
-  for(int strItr=0;strItr<v.length();strItr++)
+  for(uint32_t strItr=0;strItr<v.length();strItr++)
   {
     outBuffer+=(wchar_t)htons(v[strItr]);
   }
@@ -90,7 +90,7 @@ inline std::wstring hsttonst(std::wstring v)
 inline std::wstring nsttohst(std::wstring v)
 {
   std::wstring outBuffer = L"";
-  for(int strItr=0;strItr<v.length();strItr++)
+  for(uint32_t strItr=0;strItr<v.length();strItr++)
   {
     outBuffer+=(wchar_t)ntohs(v[strItr]);
   }

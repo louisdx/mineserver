@@ -176,7 +176,8 @@ User::~User()
     putSint32(&entityData[1], this->UID);
     this->sendOthers(&entityData[0], 5);
 
-    // Loop every chunk loaded to make sure no user pointers are left!
+
+    // Loop every loaded chunk to make sure no user pointers are left!
     for (ChunkMap::const_iterator it = Mineserver::get()->map(pos.map)->chunks.begin(); it != Mineserver::get()->map(pos.map)->chunks.end(); ++it)
     {
       it->second->users.erase(this);
@@ -221,6 +222,7 @@ bool User::sendLoginInfo()
   buffer << (int8_t)eServerToClientPacket_Login_response << (int32_t)UID << hsttonst(std::wstring(L"")) << (int64_t)0 << (int8_t)0;
 
   spawnOthers();
+
   // Put nearby chunks to queue
   for (int x = -viewDistance; x <= viewDistance; x++)
   {
@@ -252,13 +254,9 @@ bool User::sendLoginInfo()
     }
   }
 
-
   // Send spawn position
   loginBuffer << (int8_t)eServerToClientPacket_Spawn_position << (int32_t)pos.x << ((int32_t)pos.y + 2) << (int32_t)pos.z;
   loginBuffer << (int8_t)eServerToClientPacket_Time_update << (int64_t)Mineserver::get()->map(pos.map)->mapTime;
-  //  loginBuffer << (int8_t)eServerToClientPacket_Named_entity_spawn << (int32_t)UID << nick
-  //      << (int32_t)(pos.x*32) << (int32_t)((pos.y+2)*32) << (int32_t)(pos.z*32) << (int8_t)0 << (int8_t)0
-  //      << (int16_t)0;
 
 
   buffer.addToWrite((uint8_t*)loginBuffer.getWrite(), loginBuffer.getWriteLen());
@@ -274,9 +272,9 @@ bool User::sendLoginInfo()
   }
 
   // Teleport player (again)
-  Chat::sendMsg(this, nick + " connected!", Chat::ALL);
-
   teleport(pos.x, pos.y + 2, pos.z);
+
+  Mineserver::get()->chat()->sendMsg(this, nick + " connected!", Chat::ALL);
 
   sethealth(health);
   logged = true;
@@ -548,7 +546,7 @@ bool User::updatePosM(double x, double y, double z, size_t map, double stance)
 {
   if (map != pos.map && logged)
   {
-    // Loop every chunk loaded to make sure no user pointers are left!
+    // Loop every loaded chunk to make sure no user pointers are left!
     for (ChunkMap::const_iterator it = Mineserver::get()->map(pos.map)->chunks.begin(); it != Mineserver::get()->map(pos.map)->chunks.end(); ++it)
     {
       it->second->users.erase(this);

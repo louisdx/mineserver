@@ -30,9 +30,10 @@
 
 #include <string>
 #include <list>
-
 #include <stdint.h>
+#include <tr1/memory>
 
+#include "config/parser.h"
 #include "config/node.h"
 
 #include <boost/scoped_ptr.hpp>
@@ -42,28 +43,86 @@ class ConfigParser;
 class Config
 {
 public:
-  Config();
-  ~Config();
+  Config()
+  :
+  m_parser(new ConfigParser),
+  m_root(new ConfigNode)
+  {
+  }
 
-  bool load(const std::string& file);
-  bool load(const std::istream& data);
-  void dump();
+  inline bool load(const std::string& file) const
+  {
+    return m_parser->parse(file, m_root.get());
+  }
 
-  int iData(const std::string& name);
-  int64_t lData(const std::string& name);
-  float fData(const std::string& name);
-  double dData(const std::string& name);
-  std::string sData(const std::string& name);
-  bool bData(const std::string& name);
-  boost::shared_ptr<ConfigNode> mData(const std::string& name);
+  inline bool load(const std::istream& data) const
+  {
+    return m_parser->parse(data, m_root.get());
+  }
 
-  bool has(const std::string& name);
-  int type(const std::string& name) const;
-  std::auto_ptr< std::list<std::string> > keys(int type = CONFIG_NODE_UNDEFINED);
+  inline void dump() const
+  {
+    m_root->dump();
+  }
+
+  inline ConfigNode* root() const
+  {
+    return m_root.get();
+  }
+
+  inline int iData(const std::string& key)
+  {
+    return m_root->has(key) ? m_root->get(key, false)->iData() : 0;
+  }
+
+  inline int64_t lData(const std::string& key)
+  {
+    return m_root->has(key) ? m_root->get(key, false)->lData() : 0;
+  }
+
+  inline float fData(const std::string& key)
+  {
+    return m_root->has(key) ? m_root->get(key, false)->fData() : 0;
+  }
+
+  inline double dData(const std::string& key)
+  {
+    return m_root->has(key) ? m_root->get(key, false)->dData() : 0;
+  }
+
+  inline std::string sData(const std::string& key)
+  {
+    return m_root->has(key) ? m_root->get(key, false)->sData() : "";
+  }
+
+  inline bool bData(const std::string& key)
+  {
+    return m_root->has(key) ? m_root->get(key, false)->bData() : false;
+  }
+
+  inline ConfigNode* mData(const std::string& key)
+  {
+    return m_root->has(key) ? m_root->get(key, false) : NULL;
+  }
+
+  inline bool has(const std::string& key) const
+  {
+    return m_root->has(key);
+  }
+
+  inline int type(const std::string& key) const
+  {
+    return m_root->has(key) ? m_root->get(key)->type() : CONFIG_NODE_UNDEFINED;
+  }
+
+  inline std::list<std::string> keys(int type = CONFIG_NODE_UNDEFINED) const
+  {
+    return m_root->keys();
+  }
 
 private:
-  boost::scoped_ptr<ConfigParser> m_parser;
-  boost::shared_ptr<ConfigNode> m_root;
+  std::tr1::shared_ptr<ConfigParser> m_parser;
+  std::tr1::shared_ptr<ConfigNode>   m_root;
 };
 
 #endif

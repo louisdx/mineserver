@@ -99,26 +99,22 @@ std::string ConfigNode::sData() const
 
 std::auto_ptr< std::list<std::string> > ConfigNode::keys(int type)
 {
-  std::map<std::string, boost::shared_ptr<ConfigNode> >::iterator iter_a = m_list.begin();
-  std::map<std::string, boost::shared_ptr<ConfigNode> >::iterator iter_b = m_list.end();
-
   std::auto_ptr< std::list<std::string> > keys( new std::list<std::string> );
 
-  for (; iter_a != iter_b; ++iter_a)
+  for (std::map<std::string, ConfigNode*>::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
   {
-    if ((type == CONFIG_NODE_UNDEFINED) || (iter_a->second->type() == type))
+    if ((type == CONFIG_NODE_UNDEFINED) || (it->second->type() == type))
     {
-      keys->push_back(iter_a->first);
+      keys.push_back(it->first);
     }
 
-    if (iter_a->second->type() == CONFIG_NODE_LIST)
+    if (it->second->type() == CONFIG_NODE_LIST)
     {
       std::auto_ptr< std::list<std::string> > tmp_list(iter_a->second->keys(type));
-      std::list<std::string>::iterator tmp_iter = tmp_list->begin();
 
-      for (; tmp_iter != tmp_list->end(); ++tmp_iter)
+      for (std::list<std::string>::const_iterator tmp_iter = tmp_list.begin(); tmp_iter != tmp_list.end(); ++tmp_iter)
       {
-        keys->push_back((iter_a->first) + "." + (*tmp_iter));
+        keys.push_back(it->first + "." + *tmp_iter);
       }
     }
   }
@@ -261,12 +257,12 @@ bool ConfigNode::set(const std::string& key, boost::shared_ptr<ConfigNode> ptr, 
 {
   m_type = CONFIG_NODE_LIST;
 
-  size_t pos = key.find('.');
+  const size_t pos = key.find('.');
 
   if (pos != std::string::npos)
   {
-    std::string keyA(key.substr(0, pos));
-    std::string keyB(key.substr(pos + 1));
+    const std::string keyA(key.substr(0, pos));
+    const std::string keyB(key.substr(pos + 1));
 
     if (m_list.count(keyA) == 0)
     {
@@ -285,6 +281,7 @@ bool ConfigNode::set(const std::string& key, boost::shared_ptr<ConfigNode> ptr, 
   else
   {
     m_index++;
+    // WARNING: Shouldn't the old node be deleted here?
     m_list[key] = ptr;
     return true;
   }
@@ -305,10 +302,11 @@ void ConfigNode::clear()
   m_type = 0;
   m_nData = 0;
   m_sData.clear();
+  // WARNING: Shouldn't those nodes be deleted before m_list is clear()ed?
   m_list.clear();
 }
 
-void ConfigNode::dump(int indent = 0) const
+void ConfigNode::dump(int indent) const
 {
   for (int i = 0; i < indent; i++)
   {
@@ -327,17 +325,14 @@ void ConfigNode::dump(int indent = 0) const
   {
     std::cout << "list:\n";
 
-    std::map<std::string, boost::shared_ptr<ConfigNode> >::const_iterator iter_a = m_list.begin();
-    std::map<std::string, boost::shared_ptr<ConfigNode> >::const_iterator iter_b = m_list.end();
-
-    for (; iter_a != iter_b; ++iter_a)
+    for (std::map<std::string, ConfigNode*>::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
     {
-      for (int i = 0; i < (indent + 1); i++)
+      for (int i = 0; i < indent + 1; ++i)
       {
         std::cout << "  ";
       }
-      std::cout << iter_a->first << " =>\n";
-      iter_a->second->dump(indent + 1);
+      std::cout << it->first << " =>\n";
+      it->second->dump(indent + 1);
     }
 
     break;

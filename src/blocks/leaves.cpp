@@ -18,27 +18,28 @@
 #include "../constants.h"
 #include "../plugin.h"
 
+
 bool BlockLeaves::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   std::set<Decay>::iterator it = std::find_if(decaying.begin(), decaying.end(), DecayFinder(x,y,z,map));
+
   if (it != decaying.end()) decaying.erase(it);
-  return BlockBasic::onBroken( user, status, x, y, z, map, direction);
+
+  return true;
 }
 
 void BlockLeaves::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
-  if( (oldblock == BLOCK_WOOD || oldblock == BLOCK_LEAVES) ||
-    std::find_if(decaying.begin(), decaying.end(), DecayFinder(x,y,z,map)) != decaying.end() )
+  if ( (oldblock != BLOCK_WOOD && oldblock != BLOCK_LEAVES)   ||
+       std::find_if(decaying.begin(), decaying.end(), DecayFinder(x,y,z,map)) != decaying.end() )
   {
     return;
   }
 
-  for (int8_t xi = (-2); xi <= 2; xi++)
-  {
-    for (int8_t yi = (-2); yi <= 2; yi++)
-    {
-      for (int8_t zi = (-2); zi <= 2; zi++)
-      {
+
+  for (int xi = -2; xi <= 2; ++xi)
+    for (int yi = -2; yi <= 2; ++yi)
+      for (int zi = -2; zi <= 2; ++zi)
         if (std::abs(xi) + std::abs(yi) + std::abs(zi) <= 3)
         {
           uint8_t block, meta;
@@ -47,14 +48,11 @@ void BlockLeaves::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int
 
           if (block == BLOCK_WOOD) return;
         }
-      }
-    }
-  }
-    
+
   decaying.insert(Decay(time(0), x, y, z, map));
 }
 
-inline void decayIt(const Decay &decaying)
+inline void decayIt(const Decay & decaying)
 {
   uint8_t block, meta;
   const Plugin::BlockCBs & plugins =  Mineserver::get()->plugin()->getBlockCB();

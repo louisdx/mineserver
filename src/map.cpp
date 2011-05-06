@@ -78,7 +78,6 @@ Map::Map(const Map& oldmap)
 }
 
 Map::Map()
-  :	
   chunks(441) // buckets!
 {
   std::fill(emitLight, emitLight + 256, 0);
@@ -440,6 +439,7 @@ bool Map::generateLight(int x, int z, sChunk* chunk)
   if (chunk == NULL)
   {
     const ChunkMap::const_iterator it = chunks.find(Coords(x, z));
+
     if (it == chunks.end())
     {
       LOGLF("Loading chunk failed (generateLight)");
@@ -951,6 +951,7 @@ bool Map::sendNote(int x, int y, int z, char instrument, char pitch)
   Packet pkt;
   pkt << eServerToClientPacket_Play_note << (int32_t)x << (int16_t)y << (int32_t)z << (int8_t)instrument << (int8_t)pitch;
   it->second->sendPacket(pkt);
+
   return true;
 }
 
@@ -1063,7 +1064,7 @@ sChunk* Map::loadMap(int x, int z, bool generate)
     return it->second;
   }
 
-  // Case 2: We don't have the chunk but it's on file. Try to open region file
+  // Case 2: We don't have the chunk but it's on file. Try to open region file.
   RegionFile* newRegion = new RegionFile;
   if (!newRegion->openFile(mapDirectory, x, z))
   {
@@ -1133,8 +1134,9 @@ sChunk* Map::loadMap(int x, int z, bool generate)
       return NULL;
     }
   }
+
   delete newRegion;
-  
+
   sChunk* chunk = new sChunk();
 
   //Load NBT from memory
@@ -1593,7 +1595,7 @@ bool Map::sendMultiBlocks(std::vector<vec> &blocks)
       }
     }
     toRem.clear();
-    
+
     const ChunkMap::const_iterator it = chunks.find(Coords(chunk_x, chunk_z));
 
     if (it == chunks.end())
@@ -1601,6 +1603,7 @@ bool Map::sendMultiBlocks(std::vector<vec> &blocks)
       //return false;
       continue;
     }
+
     it->second->sendPacket(packet);
     it->second->sendPacket(pC);
     it->second->sendPacket(pT);

@@ -32,6 +32,7 @@
 #include <list>
 #include <vector>
 #include <ctime>
+
 #include <boost/tr1/unordered_map.hpp>
 
 #include "./packets/packets.h"
@@ -147,7 +148,6 @@ struct sChunk
     if (nbt != NULL) // unnecessary check, it's safe to delete the null pointer
     {
       delete nbt;
-      nbt = NULL;
     }
   }
 
@@ -165,7 +165,6 @@ struct sChunk
         (*it)->buffer.addToWrite(packet.getWrite(), packet.getWriteLen());
       }
     }
-
   }
 
   static bool userBoundary(sChunk* left, std::list<User*>& lusers, sChunk* right, std::list<User*>& rusers)
@@ -195,9 +194,9 @@ struct sChunk
 };
 
 /*  STL does not yet come with a hash_combine(), so I'm lifting this
-*  implementation from boost. It creates a hash function for every
-*  pair of hashable types. For further generalizations, see boost/functional/hash.
-*/
+ *  implementation from boost. It creates a hash function for every
+ *  pair of hashable types. For further generalizations, see boost/functional/hash.
+ */
 
 template <class T>
 inline void hash_combine(std::size_t & seed, T const & v)
@@ -209,7 +208,7 @@ inline void hash_combine(std::size_t & seed, T const & v)
 template<typename S, typename T>
 struct PairHash : public std::unary_function<std::pair<S, T>, size_t>
 {
-  inline size_t operator()(const std::pair<S, T> & v) const	
+  inline size_t operator()(const std::pair<S, T> & v) const
   {
     std::size_t seed = 0;
     hash_combine(seed, v.first);

@@ -59,6 +59,7 @@ public:
   void setData(double data);
   void setData(const std::string& data);
   std::auto_ptr< std::list<std::string> > keys(int type = CONFIG_NODE_UNDEFINED);
+
   int type() const;
   void setType(int type);
   bool has(const std::string& key);
@@ -66,11 +67,8 @@ public:
   bool set(const std::string& key, boost::shared_ptr<ConfigNode> ptr, bool createMissing = true);
   bool add(boost::shared_ptr<ConfigNode> ptr);
   void clear();
-  void dump(int indent) const;
-  void dump() const
-  {
-    dump(0);
-  }
+  void dump(int indent = 0) const;
+
 private:
   int m_type;
   int m_index;

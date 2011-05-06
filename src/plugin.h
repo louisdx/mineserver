@@ -29,7 +29,7 @@
 #define _PLUGIN_H
 
 #include <string>
-#include <boost/tr1/unordered_map.hpp>
+#include <tr1/unordered_map>
 #include <vector>
 #include <ctime>
 
@@ -88,7 +88,7 @@ public:
   typedef std::tr1::unordered_map<std::string, LIBRARY_HANDLE> LibHandleMap;
   typedef std::tr1::unordered_map<std::string, void*> PointerMap;
   typedef std::tr1::unordered_map<std::string, float> VersionMap;
-  
+
   typedef std::vector<BlockBasic*> BlockCBs;
   typedef std::vector<ItemBasic*>  ItemCBs;
 

@@ -41,6 +41,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "chat.h"
 
 #include "boost/scoped_array.hpp"
+using std::min;
+
+Chat::Chat()
+{
+}
 
 using std::min;
 
@@ -49,6 +54,7 @@ std::vector<std::string> parseCmd(std::string cmd);
 bool Chat::sendUserlist(User* user)
 {
   sendMsg(user, MC_COLOR_BLUE + "[ " + dtos(User::all().size()) + " / " + dtos(Mineserver::get()->config()->iData("system.user_limit")) + " players online ]", USER);
+
   std::string playerDesc;
   for (unsigned int i = 0; i < User::all().size(); i++)
   {
@@ -159,7 +165,6 @@ bool Chat::handleMsg(User* user, std::string msg)
 void Chat::handleCommand(User* user, std::string msg, const std::string& timeStamp)
 {
   std::vector<std::string> cmd = parseCmd(msg.substr(1));
-
   if (!cmd.size() || !cmd[0].size())
   {
     return;
