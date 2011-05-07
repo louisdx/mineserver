@@ -18,14 +18,14 @@
 #include "../constants.h"
 #include "../plugin.h"
 
-
+#if 0
 bool BlockLeaves::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
-  std::set<Decay>::iterator it = std::find_if(decaying.begin(), decaying.end(), DecayFinder(x,y,z,map));
+  DecayList::iterator it = std::find_if(decaying.begin(), decaying.end(), DecayFinder(x,y,z,map));
 
   if (it != decaying.end()) decaying.erase(it);
 
-  return true;
+  return BlockBasic::onBroken(user,status,x,y,z,map,direction);
 }
 
 void BlockLeaves::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
@@ -49,10 +49,10 @@ void BlockLeaves::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int
           if (block == BLOCK_WOOD) return;
         }
 
-  decaying.insert(Decay(time(0), x, y, z, map));
+  decaying.insert(DecayPtr(new Decay(time(0), x, y, z, map)));
 }
 
-inline void decayIt(const Decay & decaying)
+inline void decayIt(BlockLeaves::DecayPtr decaying)
 {
   uint8_t block, meta;
   const Plugin::BlockCBs & plugins =  Mineserver::get()->plugin()->getBlockCB();
@@ -65,13 +65,13 @@ inline void decayIt(const Decay & decaying)
     {
       for (int zoff = -1; zoff <= 1; ++zoff)
       {
-        Mineserver::get()->map(decaying.map)->getBlock(decaying.x + xoff, decaying.y + yoff, decaying.z + zoff, &block, &meta);
+        Mineserver::get()->map(decaying->map)->getBlock(decaying->x + xoff, decaying->y + yoff, decaying->z + zoff, &block, &meta);
 
         for (Plugin::BlockCBs::const_iterator i = plugins.begin(); i != plugins.end(); ++i)
         {
           if (*i != NULL && (*i)->affectedBlock(block))
           {
-            (*i)->onNeighbourBroken(0, BLOCK_LEAVES, decaying.x + xoff, decaying.y + yoff, decaying.z + zoff, decaying.map, 0);
+            (*i)->onNeighbourBroken(0, BLOCK_LEAVES, decaying->x + xoff, decaying->y + yoff, decaying->z + zoff, decaying->map, 0);
           }
         }
       }
@@ -82,7 +82,7 @@ inline void decayIt(const Decay & decaying)
   {
     if ((*i)->affectedBlock(BLOCK_LEAVES))
     {
-      (*i)->onBroken(0, 0, decaying.x, decaying.y, decaying.z, decaying.map, 0);
+      (*i)->onBroken(0, 0, decaying->x, decaying->y, decaying->z, decaying->map, 0);
     }
   }
 }
@@ -92,12 +92,12 @@ void BlockLeaves::timer200()
   while (!decaying.empty())
   {
     std::cout << "Still in leaves loop, now " << decaying.size() << " units left." << std::endl;
-    const Decay& d = *decaying.begin();
+    DecayPtr d(*decaying.begin());
 
-    if ((time(NULL) - d.decayStart) >= 5)
+    if ((time(NULL) - d->decayStart) >= 5)
     {
       decayIt(d);
-      decaying.erase(d); // Erasing by value is safe, erases either 0 or 1 elements.
+      decaying.erase(decaying.begin()); // Erasing by value is safe, erases either 0 or 1 elements.
     }
     else
     {
@@ -105,3 +105,4 @@ void BlockLeaves::timer200()
     }
   }
 }
+#endif
