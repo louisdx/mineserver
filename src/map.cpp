@@ -645,11 +645,13 @@ void Map::spreadLight(int x, int y, int z, int light_value, uint8_t type /* 0: s
       {
         if      (type == 0) setLight(x_toset, y_toset, z_toset, lightNew, 0, 1, chunk);
         else if (type == 1) setLight(x_toset, y_toset, z_toset, 0, lightNew, 2, chunk);
-        spreadLight(x_toset, y_toset, z_toset, lightNew, type);
+        // this line is causing instability!
+        //spreadLight(x_toset, y_toset, z_toset, lightNew, type);
       }
     }
     else
     {
+      // this line is causing instability!
       //LOGLF("Loading chunk failed (spreadLight)");
       return;
     }
