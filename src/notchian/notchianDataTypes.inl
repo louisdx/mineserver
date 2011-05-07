@@ -26,16 +26,28 @@
  */
 
 
-template<class BaseType>
-NotchianType<BaseType>::NotchianType() 
-:mVal(0)
-{
-}
+#include <string>
+#include <stack>
+#include <utility>
+#include <tr1/memory>
 
-template<class BaseType>
-NotchianType<BaseType>::~NotchianType()
-{
-}
+enum {
+  CONFIG_TOKEN_ENTITY = 1,
+  CONFIG_TOKEN_LABEL = 2,
+  CONFIG_TOKEN_NUMBER = 3,
+  CONFIG_TOKEN_STRING = 4,
+  CONFIG_TOKEN_BOOLEAN = 5,
+
+  CONFIG_TOKEN_LIST_OPEN = 10,
+  CONFIG_TOKEN_LIST_CLOSE = 11,
+  CONFIG_TOKEN_LIST_DELIMITER = 12,
+  CONFIG_TOKEN_LIST_LABEL = 13,
+
+  CONFIG_TOKEN_OPERATOR_ASSIGN = 20,
+  CONFIG_TOKEN_OPERATOR_APPEND = 21,
+
+  CONFIG_TOKEN_TERMINATOR = 30
+};
 
 // do not allow implicit conversion to notchian types
 template<class BaseType>
@@ -48,8 +60,19 @@ NotchianType<BaseType>::NotchianType(BaseType val)
 template<class BaseType>
 NotchianType<BaseType>::operator BaseType()
 {
-	return mVal;
-}
+  typedef std::pair<int, std::string> Token;
+  typedef std::tr1::shared_ptr<Token> TokenPtr;
+
+public:
+  ConfigLexer(ConfigScanner& scanner) : m_scanner(scanner) { }
+
+  bool get_token(int& type, std::string& data);
+  void put_token(int type, const std::string& data);
+
+private:
+  ConfigScanner& m_scanner;
+  std::stack<TokenPtr> m_tokenStack;
+};
 
 template<class BaseType>
 NotchianType<BaseType>& NotchianType<BaseType>::operator =(const BaseType& rhs)
