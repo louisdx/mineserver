@@ -59,12 +59,12 @@ struct Decay
 
 class BlockLeaves: public BlockBasic
 {
-#if 0
+
 public:
   typedef boost::shared_ptr<Decay> DecayPtr;
 
-  inline bool affectedBlock(int block) const { return block == BLOCK_LEAVES; }
-
+  bool affectedBlock(int block) { return block == BLOCK_LEAVES; }
+#if 0
   bool onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
 
   void onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
