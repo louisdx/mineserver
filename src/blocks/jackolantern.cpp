@@ -40,38 +40,6 @@ bool Blockjackolantern::affectedBlock(int block)
   return false;
 }
 
-
-void Blockjackolantern::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void Blockjackolantern::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void Blockjackolantern::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-bool Blockjackolantern::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  uint8_t block, meta;
-  Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta);
-
-  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
-
-  this->spawnBlockItem(x, y, z, map, block, 0);
-  return false;
-}
-
-void Blockjackolantern::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
 bool Blockjackolantern::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   uint8_t oldblock;
@@ -131,12 +99,4 @@ bool Blockjackolantern::onPlace(User* user, int16_t newblock, int32_t x, int8_t 
   Mineserver::get()->map(map)->sendBlockChange(x, y, z, newblock, direction);
 
   return false;
-}
-
-void Blockjackolantern::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void Blockjackolantern::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
 }

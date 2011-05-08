@@ -31,9 +31,10 @@
 #include <string>
 #include <map>
 #include <list>
-#include <tr1/memory>
 
 #include <stdint.h>
+
+#include <boost/shared_ptr.hpp>
 
 #define CONFIG_NODE_UNDEFINED 0
 #define CONFIG_NODE_LIST 1
@@ -45,7 +46,7 @@ class ConfigNode
 {
 public:
 
-  typedef std::tr1::shared_ptr<ConfigNode> Ptr;
+  typedef boost::shared_ptr<ConfigNode>  Ptr;
   typedef std::map<std::string, Ptr> Map;
 
   ConfigNode();
@@ -116,7 +117,7 @@ public:
     m_sData = data;
   }
 
-  std::list<std::string> keys(int type = CONFIG_NODE_UNDEFINED) const;
+  std::auto_ptr< std::list<std::string> > keys(int type = CONFIG_NODE_UNDEFINED) const;
 
   inline int type() const
   {
@@ -140,7 +141,7 @@ private:
   int m_index;
   double m_nData;
   std::string m_sData;
-  Map m_list;
+  std::map<std::string, boost::shared_ptr<ConfigNode> > m_list;
 };
 
 #endif

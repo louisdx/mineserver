@@ -44,14 +44,14 @@ struct Decay
   {
   }
 
-  inline bool operator<(const Decay& o) const
-  {
-    return decayStart < o.decayStart               // Oldest first
-      || (decayStart == o.decayStart && x < o.x)
-      || (decayStart == o.decayStart && x == o.x && y < o.y)
-      || (decayStart == o.decayStart && x == o.x && y == o.y && z < o.z)
-      || (decayStart == o.decayStart && x == o.x && y == o.y && z == o.z && map < o.map);
-  }
+  //inline bool operator<(const Decay& o) const
+  //{
+  //  return decayStart < o.decayStart               // Oldest first
+  //    || (decayStart == o.decayStart && x < o.x)
+  //    || (decayStart == o.decayStart && x == o.x && y < o.y)
+  //    || (decayStart == o.decayStart && x == o.x && y == o.y && z < o.z)
+  //    || (decayStart == o.decayStart && x == o.x && y == o.y && z == o.z && map < o.map);
+  //}
 
   time_t decayStart;
   int32_t x, y, z, map;
@@ -59,27 +59,29 @@ struct Decay
 
 class BlockLeaves: public BlockBasic
 {
-  std::set<Decay> decaying;
-
-  struct DecayFinder
-  {
-    DecayFinder(int32_t x, int32_t y, int32_t z, int32_t map) : x(x), y(y), z(z), map(map) { }
-    inline bool operator()(const Decay& d) const { return x == d.x && y == d.y && z == d.z && map == d.map; }
-  private:
-    int32_t x, y, z, map;
-  };
-
 
 public:
+  typedef boost::shared_ptr<Decay> DecayPtr;
 
-  inline bool affectedBlock(int block) const { return block == BLOCK_LEAVES; }
-
+  bool affectedBlock(int block) { return block == BLOCK_LEAVES; }
+#if 0
   bool onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
 
   void onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
 
   void timer200();
+private:
+  typedef std::set< DecayPtr > DecayList;
+  DecayList decaying;
 
+  struct DecayFinder
+  {
+    DecayFinder(int32_t x, int32_t y, int32_t z, int32_t map) : x(x), y(y), z(z), map(map) { }
+    inline bool operator()(DecayPtr d) const { return x == d->x && y == d->y && z == d->z && map == d->map; }
+  private:
+    int32_t x, y, z, map;
+  };
+#endif
 };
 
 #endif //_BLOCKS_LEAVES

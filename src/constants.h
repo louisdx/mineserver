@@ -36,6 +36,8 @@
 // configuration from build system
 #include "configure.h"
 
+#include <boost/shared_ptr.hpp>
+
 //
 // Mineserver constants
 //
@@ -170,21 +172,13 @@ struct Drop
   uint16_t item_id;
   uint32_t probability;
   uint8_t count;
-  Drop* alt_drop;
+  boost::shared_ptr<Drop> alt_drop;
 
-  Drop() : item_id(0), probability(0), count(0), alt_drop(NULL) {}
-  Drop(uint16_t _item_id, uint32_t _probability, uint8_t _count, Drop* _alt_drop = NULL) : item_id(_item_id), probability(_probability), count(_count), alt_drop(_alt_drop) {}
-
-  ~Drop()
-  {
-    if (alt_drop != NULL)
-    {
-      delete alt_drop;
-    }
-  }
+  Drop() : item_id(0), probability(0), count(0) {}
+  Drop(uint16_t _item_id, uint32_t _probability, uint8_t _count, boost::shared_ptr<Drop> _alt_drop = boost::shared_ptr<Drop>()) : item_id(_item_id), probability(_probability), count(_count), alt_drop(_alt_drop) {}
 };
 
-extern std::map<uint8_t, Drop*> BLOCKDROPS;
+extern std::map<uint8_t, boost::shared_ptr<Drop> > BLOCKDROPS;
 
 // Chat prefixes
 const char SERVERMSGPREFIX = '%';
@@ -194,7 +188,6 @@ const char ADMINCHATPREFIX = '&';
 const unsigned int SERVER_CONSOLE_UID = -1;
 
 void initConstants();
-void freeConstants();
 
 //allocate 1 MB for chunk files
 const int ALLOCATE_NBTFILE = 1048576;

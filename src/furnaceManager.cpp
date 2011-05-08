@@ -51,7 +51,7 @@ void FurnaceManager::update()
   for (int index = m_activeFurnaces.size() - 1; index >= 0; index--)
   {
     // Get a pointer to this furnace
-    Furnace* currentFurnace = (Furnace*)m_activeFurnaces[index];
+    boost::shared_ptr<Furnace>  currentFurnace = m_activeFurnaces[index];
 
     // If we're burning, decrememnt the fuel
     if (currentFurnace->isBurningFuel())
@@ -84,7 +84,6 @@ void FurnaceManager::update()
     // Remove this furnace from the list once it stops burning it's current fuel
     if (!currentFurnace->isBurningFuel())
     {
-      delete m_activeFurnaces[index];
       m_activeFurnaces.erase(m_activeFurnaces.begin() + index);
     }
   }
@@ -97,16 +96,16 @@ void removeFurnace(furnaceData* data_)
 
 void FurnaceManager::removeFurnace(furnaceData* data_)
 {
-  Furnace* furnace = NULL;
+  //Furnace* furnace = NULL;
   // Loop thru all active furnaces, to see if this one is here
   for (unsigned int index = 0; index < m_activeFurnaces.size(); index++)
   {
-    Furnace* currentFurnace = (Furnace*)m_activeFurnaces[index];
+    boost::shared_ptr<Furnace> currentFurnace = m_activeFurnaces[index];
     if (currentFurnace->x() == data_->x && currentFurnace->y() == data_->y && currentFurnace->z() == data_->z)
     {
-      furnace = currentFurnace;
+      //furnace = currentFurnace;
       m_activeFurnaces.erase(m_activeFurnaces.begin() + index);
-      break;
+      return;
     }
   }
 }
@@ -115,13 +114,13 @@ void FurnaceManager::removeFurnace(furnaceData* data_)
 void FurnaceManager::handleActivity(furnaceData* data_)
 {
 
-  Furnace* furnace = NULL;
+  boost::shared_ptr<Furnace> furnace;
   int32_t arraypos = -1;
   bool found = false;
   // Loop thru all active furnaces, to see if this one is here
   for (unsigned int index = 0; index < m_activeFurnaces.size(); index++)
   {
-    Furnace* currentFurnace = (Furnace*)m_activeFurnaces[index];
+    boost::shared_ptr<Furnace> currentFurnace = m_activeFurnaces[index];
     if (currentFurnace->x() == data_->x && currentFurnace->y() == data_->y && currentFurnace->z() == data_->z)
     {
       found = true;
@@ -135,12 +134,12 @@ void FurnaceManager::handleActivity(furnaceData* data_)
   if (!found)
   {
     // Create a furnace
-    furnace = new Furnace(data_);
+    furnace = boost::shared_ptr<Furnace>(new Furnace(data_));
   }
 
   // Check if this furnace is active
   if ((furnace->isBurningFuel() || furnace->slots()[SLOT_FUEL].getCount() > 0) &&
-      furnace->hasValidIngredient())
+    furnace->hasValidIngredient())
   {
     if (!found)
     {
@@ -151,8 +150,6 @@ void FurnaceManager::handleActivity(furnaceData* data_)
   {
     if (found)
     {
-      delete furnace;
-      furnace = NULL;
       m_activeFurnaces.erase(m_activeFurnaces.begin() + arraypos);
     }
   }

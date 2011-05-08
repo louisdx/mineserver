@@ -31,11 +31,12 @@
 #include <deque>
 #include <string>
 
+#include "util/NonNull.h"
+
 class User;
 
-class Chat
+namespace Chat
 {
-public:
   enum MessageTarget
   {
     ALL,
@@ -46,23 +47,17 @@ public:
     GUESTS
   };
 
-  Chat();
-  ~Chat();
+  bool handleMsg(NonNull<User> user, std::string msg);
+  void handleServerMsg(NonNull<User> user, std::string msg, const std::string& timeStamp);
+  void handleAdminChatMsg(NonNull<User> user, std::string msg, const std::string& timeStamp);
+  void handleChatMsg(NonNull<User> user, std::string msg, const std::string& timeStamp);
 
-  bool handleMsg(User* user, std::string msg);
-  void handleServerMsg(User* user, std::string msg, const std::string& timeStamp);
-  void handleAdminChatMsg(User* user, std::string msg, const std::string& timeStamp);
-  void handleChatMsg(User* user, std::string msg, const std::string& timeStamp);
+  bool sendMsg(NonNull<User> user, std::string msg, MessageTarget action = ALL);
+  // TODO support this feature
+  //bool sendUserlist(NonNull<User> user);
+  void sendHelp(NonNull<User> user, std::deque<std::string> args);
 
-  bool sendMsg(User* user, std::string msg, MessageTarget action = ALL);
-  bool sendUserlist(User* user);
-  void sendHelp(User* user, std::deque<std::string> args);
-
-  void handleCommand(User* user, std::string msg, const std::string& timeStamp);
-
-private:
-  std::deque<std::string> parseCmd(std::string cmd);
-  std::string adminPassword;
+  void handleCommand(NonNull<User> user, std::string msg, const std::string& timeStamp);
 };
 
 #endif

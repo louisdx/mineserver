@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <boost/bind.hpp>
 
 #include "../mineserver.h"
 #include "../plugin.h"
@@ -36,7 +37,7 @@
 
 bool BlockBasic::affectedBlock(int block)
 {
-  return false;
+  return true;
 }
 
 
@@ -72,23 +73,26 @@ bool BlockBasic::isBlockStackable(const uint8_t block)
   return true;
 }
 
+bool checkOnBlock(const int32_t x, const int8_t y, const int32_t z, NonNull<User> user)
+{
+  /* don't allow block placement on top of player */
+  if (user->checkOnBlock(x, y, z))
+  {
+    return true;
+  }
+  if (user->checkOnBlock(x, y - 1, z))
+  {
+    return true;
+  }
+  return false;
+}
+
 bool BlockBasic::isUserOnBlock(const int32_t x, const int8_t y, const int32_t z, const int map)
 {
-  /* TODO: Get Users by chunk rather then whole list */
-  for (unsigned int i = 0; i < User::all().size(); i++)
-  {
-    /* don't allow block placement on top of player */
-    if (User::all()[i]->checkOnBlock(x, y, z))
-    {
-      return true;
-    }
-    if (User::all()[i]->checkOnBlock(x, y - 1, z))
-    {
-      return true;
-    }
-  }
+  Ptr<User> result(Mineserver::get()->findUser(boost::bind(&checkOnBlock,x,y,z,_1)));
 
-  return false;
+  // safe to test result as a bool, because it is a safe_bool
+  return result;
 }
 
 bool BlockBasic::translateDirection(int32_t* x, int8_t* y, int32_t* z, int map, const int8_t direction)
@@ -138,7 +142,7 @@ bool BlockBasic::isBlockEmpty(const int32_t x, const int8_t y, const int32_t z, 
 
 bool BlockBasic::spawnBlockItem(const int32_t x, const int8_t y, const int32_t z, int map, const uint8_t block, const uint8_t meta)
 {
-  Drop* drop = NULL;
+  boost::shared_ptr<Drop> drop;
 
   if (BLOCKDROPS.count(block))
   {
@@ -224,12 +228,23 @@ void BlockBasic::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y
 
 bool BlockBasic::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map,  int8_t direction)
 {
-  //Clear block on destroy
-  uint8_t block, meta;
-  Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta);
+  uint8_t block;
+  uint8_t meta;
+
+  if (!Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta))
+  {
+    revertBlock(user, x, y, z, map);
+    return true;
+  }
+  if (block != BLOCK_WOOL && block != BLOCK_WOOD && block != BLOCK_STEP)
+  {
+    // Only Cloth, Wood and Step have colour metadata
+    meta = 0;
+  }
+
   Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
   Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  spawnBlockItem(x, y, z, map, block, meta);
+  this->spawnBlockItem(x, y, z, map, block, meta);
   return false;
 }
 
@@ -239,6 +254,52 @@ void BlockBasic::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8
 
 bool BlockBasic::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map,  int8_t direction)
 {
+  uint8_t oldblock;
+  uint8_t oldmeta;
+
+  if (newblock > 255)
+  {
+    return true;
+  }
+
+  if (!Mineserver::get()->map(map)->getBlock(x, y, z, &oldblock, &oldmeta))
+  {
+    revertBlock(user, x, y, z, map);
+    return true;
+  }
+
+  /* Check block below allows blocks placed on top */
+  if (!this->isBlockStackable(oldblock))
+  {
+    revertBlock(user, x, y, z, map);
+    return true;
+  }
+
+  if (!this->translateDirection(&x, &y, &z, map, direction))
+  {
+    revertBlock(user, x, y, z, map);
+    return true;
+  }
+
+  if (this->isUserOnBlock(x, y, z, map))
+  {
+    revertBlock(user, x, y, z, map);
+    return true;
+  }
+
+  if (!this->isBlockEmpty(x, y, z, map))
+  {
+    revertBlock(user, x, y, z, map);
+    return true;
+  }
+
+  //direction = user->relativeToBlock(x, y, z);
+
+  if (newblock < 256)
+  {
+    Mineserver::get()->map(map)->setBlock(x, y, z, (char)newblock, 0);
+    Mineserver::get()->map(map)->sendBlockChange(x, y, z, (char)newblock, 0);
+  }
   return false;
 }
 
@@ -248,6 +309,20 @@ void BlockBasic::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_
 
 void BlockBasic::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map,  int8_t direction)
 {
+  //ToDo: fix spawning items on replace
+  return;
+
+  uint8_t oldblock;
+  uint8_t oldmeta;
+
+  if (!Mineserver::get()->map(map)->getBlock(x, y, z, &oldblock, &oldmeta))
+  {
+    return;
+  }
+
+  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
+  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
+  Mineserver::get()->map(map)->createPickupSpawn(x, y, z, oldblock, 1, 0, NULL);
 }
 
 void BlockBasic::onNeighbourMove(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int8_t direction)
@@ -263,5 +338,5 @@ void BlockBasic::revertBlock(User* user, int32_t x, int8_t y, int32_t z, int map
 {
   unsigned char block, meta;
   Mineserver::get()->map(map)->getBlock((int)x, (int)y, (int)z, &block, &meta);
-  user->buffer << PACKET_BLOCK_CHANGE << (int32_t)x << (int8_t)y << (int32_t)z << (int8_t)block << (int8_t)meta;
+  user->buffer << eServerToClientPacket_Block_change << (int32_t)x << (int8_t)y << (int32_t)z << (int8_t)block << (int8_t)meta;
 }

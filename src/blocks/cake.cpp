@@ -27,7 +27,7 @@
 
 #include "../mineserver.h"
 #include "../map.h"
-#include "../packets.h"
+#include "../packets/packets.h"
 
 #include "cake.h"
 
@@ -115,25 +115,8 @@ bool BlockCake::onInteract(User* user, int32_t x, int8_t y, int32_t z, int map)
   }
   return false;
 }
-void BlockCake::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockCake::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
 
 bool BlockCake::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map,  int8_t direction)
 {
-  uint8_t block;
-  uint8_t meta;
-
-  if (!Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta))
-  {
-    return true;
-  }
-
-  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
-  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  return false;
+  return BlockBasic::onBroken(user, status, x, y, z, map, direction);
 }

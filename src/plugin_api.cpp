@@ -29,6 +29,7 @@
 #include <vector>
 #include <string>
 #include <cstdarg>
+#include <boost/bind.hpp>
 
 #include "sys/stat.h"
 
@@ -48,7 +49,7 @@
 #include "config.h"
 #include "map.h"
 #include "mob.h"
-#include "blocks/default.h"
+//#include "blocks/default.h"
 #include "blocks/falling.h"
 #include "blocks/torch.h"
 #include "blocks/plant.h"
@@ -67,22 +68,6 @@
 
 mineserver_pointer_struct plugin_api_pointers;
 
-// HELPER FUNCTIONS
-User* userFromName(std::string user)
-{
-  for (unsigned int i = 0; i < Mineserver::get()->users().size(); i++)
-  {
-    if (Mineserver::get()->users()[i]->fd && Mineserver::get()->users()[i]->logged)
-    {
-      // Don't send to his user if he is DND and the message is a chat message
-      if (user == Mineserver::get()->users()[i]->nick)
-      {
-        return Mineserver::get()->users()[i];
-      }
-    }
-  }
-  return NULL;
-}
 
 // PLUGIN_API FUNCTIONS
 
@@ -197,7 +182,7 @@ void hook_doAll(const char* hookID, ...)
 // LOGGER WRAPPER FUNCTIONS
 void logger_log(int type, const char* source, const char* message)
 {
-  Mineserver::get()->logger()->log((LogType::LogType)type, std::string(source), std::string(message));
+  Logger::log((LogType::LogType)type, std::string(source), std::string(message));
 }
 
 // CHAT WRAPPER FUNCTIONS
@@ -209,35 +194,29 @@ bool chat_sendmsgTo(const char* user, const char* msg)
     LOG(INFO, "Chat", msg);
     return true;
   }
-  for (unsigned int i = 0; i < Mineserver::get()->users().size(); i++)
+
+  Ptr<User> result(Mineserver::get()->userFromName(userStr));
+
+  if((result) && 
+    (!result->dnd))
   {
-    if (Mineserver::get()->users()[i]->fd && Mineserver::get()->users()[i]->logged)
-    {
-      // Don't send to his user if he is DND and the message is a chat message
-      if (userStr == Mineserver::get()->users()[i]->nick)
-      {
-        Mineserver::get()->users()[i]->buffer << (int8_t)PACKET_CHAT_MESSAGE << std::string(msg);
-        return true;
-      }
-    }
+    result->buffer << (int8_t)eClientToServerPacket_Chat_message << std::string(msg);
+    return true;
   }
   return false;
 }
 
+void sendChatMessage(std::string msg, NonNull<User> user)
+{// Don't send to his user if he is DND and the message is a chat message
+  if (!(user->dnd))
+  {
+    user->buffer << (int8_t)eClientToServerPacket_Chat_message << msg;
+  }
+}
 bool chat_sendmsg(const char* msg)
 {
-  std::string msgStr(msg);
-  for (unsigned int i = 0; i < Mineserver::get()->users().size(); i++)
-  {
-    if (Mineserver::get()->users()[i]->fd && Mineserver::get()->users()[i]->logged)
-    {
-      // Don't send to his user if he is DND and the message is a chat message
-      if (!(Mineserver::get()->users()[i]->dnd))
-      {
-        Mineserver::get()->users()[i]->buffer << (int8_t)PACKET_CHAT_MESSAGE << msgStr;
-      }
-    }
-  }
+  Mineserver::get()->forEachUser(boost::bind(&sendChatMessage,std::string(msg),_1));
+
   return true;
 }
 
@@ -245,10 +224,12 @@ bool chat_sendUserlist(const char* user)
 {
   std::string userStr(user);
 
-  User* userPtr = userFromName(userStr);
-  if (userPtr != NULL)
+  Ptr<User> result(Mineserver::get()->userFromName(userStr));
+  if (result)
   {
-    Mineserver::get()->chat()->sendUserlist(userPtr);
+    sendChatMessage(std::string("Listing users not yet supported."), result);
+    // TODO support this
+    //Chat::sendUserlist(result);
     return true;
   }
   return false;
@@ -258,17 +239,16 @@ bool chat_handleMessage(const char* username, const char* message)
 {
   if (strcmp(username, "[Server]") == 0)
   {
-    User serverUser(-1, SERVER_CONSOLE_UID);
-    serverUser.changeNick("[Server]");
+    NonNull<User> serverUser(Mineserver::get()->serverUser());
 
-    Mineserver::get()->chat()->handleMsg(&serverUser, message);
+    Chat::handleMsg(serverUser, message);
   }
   else
   {
-    User* user = userFromName(std::string(username));
-    if (user != NULL)
+    Ptr<User> result(Mineserver::get()->userFromName(username));
+    if (result)
     {
-      Mineserver::get()->chat()->handleMsg(user, message);
+      Chat::handleMsg(result, message);
     }
   }
   return false;
@@ -279,12 +259,8 @@ bool map_setTime(int timeValue)
 {
   Mineserver::get()->map(0)->mapTime = timeValue;
   Packet pkt;
-  pkt << (int8_t)PACKET_TIME_UPDATE << (int64_t)Mineserver::get()->map(0)->mapTime;
-
-  if (User::all().size())
-  {
-    User::all()[0]->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
-  }
+  pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)Mineserver::get()->map(0)->mapTime;
+  User::sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
   return true;
 }
 
@@ -295,10 +271,9 @@ int map_getTime()
 
 void map_createPickupSpawn(int x, int y, int z, int type, int count, int health, const char* user)
 {
-  User* tempUser = NULL;
   if (user != NULL)
   {
-    tempUser = userFromName(std::string(user));
+    Ptr<User> tempUser(Mineserver::get()->userFromName(std::string(user)));
     Mineserver::get()->map(tempUser->pos.map)->createPickupSpawn(x, y, z, type, count, health, tempUser);
 
   }
@@ -391,16 +366,10 @@ unsigned char* map_getMapData_blocklight(int x, int z)
 bool user_toggleDND(const char* user)
 {
   std::string username(user);
-  for (unsigned int i = 0; i < Mineserver::get()->users().size(); i++)
+  if(Ptr<User> result = (Mineserver::get()->userFromName(username)))
   {
-    if (Mineserver::get()->users()[i]->fd && Mineserver::get()->users()[i]->logged)
-    {
-      if (username == Mineserver::get()->users()[i]->nick)
-      {
-        Mineserver::get()->users()[i]->toggleDND();
-        return true;
-      }
-    }
+    result->toggleDND();
+    return true;
   }
 
   return false;
@@ -408,101 +377,87 @@ bool user_toggleDND(const char* user)
 
 bool user_getPosition(const char* user, double* x, double* y, double* z, float* yaw, float* pitch, double* stance)
 {
-  std::string userStr(user);
-  for (unsigned int i = 0; i < Mineserver::get()->users().size(); i++)
+  std::string username(user);
+  if(Ptr<User> result = (Mineserver::get()->userFromName(username)))
   {
-    if (Mineserver::get()->users()[i]->fd && Mineserver::get()->users()[i]->logged)
+    //For safety, check for NULL pointers!
+    if (x != NULL)
     {
-      //Is this the user?
-      if (userStr == Mineserver::get()->users()[i]->nick)
-      {
-        //For safety, check for NULL pointers!
-        if (x != NULL)
-        {
-          *x = Mineserver::get()->users()[i]->pos.x;
-        }
-        if (y != NULL)
-        {
-          *y = Mineserver::get()->users()[i]->pos.y;
-        }
-        if (z != NULL)
-        {
-          *z = Mineserver::get()->users()[i]->pos.z;
-        }
-        if (yaw != NULL)
-        {
-          *yaw = Mineserver::get()->users()[i]->pos.yaw;
-        }
-        if (pitch != NULL)
-        {
-          *pitch = Mineserver::get()->users()[i]->pos.pitch;
-        }
-        if (stance != NULL)
-        {
-          *stance = Mineserver::get()->users()[i]->pos.stance;
-        }
-        //We found the user
-        return true;
-      }
+      *x = result->pos.x;
     }
+    if (y != NULL)
+    {
+      *y = result->pos.y;
+    }
+    if (z != NULL)
+    {
+      *z = result->pos.z;
+    }
+    if (yaw != NULL)
+    {
+      *yaw = result->pos.yaw;
+    }
+    if (pitch != NULL)
+    {
+      *pitch = result->pos.pitch;
+    }
+    if (stance != NULL)
+    {
+      *stance = result->pos.stance;
+    }
+    //We found the user
+    return true;
   }
+
   return false;
 }
 
 
 bool user_getPositionW(const char* user, double* x, double* y, double* z, int* w, float* yaw, float* pitch, double* stance)
 {
-  std::string userStr(user);
-  for (unsigned int i = 0; i < Mineserver::get()->users().size(); i++)
+  std::string username(user);
+  if(Ptr<User> result = (Mineserver::get()->userFromName(username)))
   {
-    if (Mineserver::get()->users()[i]->fd && Mineserver::get()->users()[i]->logged)
+    //For safety, check for NULL pointers!
+    if (x != NULL)
     {
-      //Is this the user?
-      if (userStr == Mineserver::get()->users()[i]->nick)
-      {
-        //For safety, check for NULL pointers!
-        if (x != NULL)
-        {
-          *x = Mineserver::get()->users()[i]->pos.x;
-        }
-        if (y != NULL)
-        {
-          *y = Mineserver::get()->users()[i]->pos.y;
-        }
-        if (z != NULL)
-        {
-          *z = Mineserver::get()->users()[i]->pos.z;
-        }
-        if (yaw != NULL)
-        {
-          *yaw = Mineserver::get()->users()[i]->pos.yaw;
-        }
-        if (pitch != NULL)
-        {
-          *pitch = Mineserver::get()->users()[i]->pos.pitch;
-        }
-        if (stance != NULL)
-        {
-          *stance = Mineserver::get()->users()[i]->pos.stance;
-        }
-        if (w != NULL)
-        {
-          *w = Mineserver::get()->users()[i]->pos.map;
-        }
-        //We found the user
-        return true;
-      }
+      *x = result->pos.x;
     }
+    if (y != NULL)
+    {
+      *y = result->pos.y;
+    }
+    if (z != NULL)
+    {
+      *z = result->pos.z;
+    }
+    if (yaw != NULL)
+    {
+      *yaw = result->pos.yaw;
+    }
+    if (pitch != NULL)
+    {
+      *pitch = result->pos.pitch;
+    }
+    if (stance != NULL)
+    {
+      *stance = result->pos.stance;
+    }
+    if (w != NULL)
+    {
+      *w = result->pos.map;
+    }
+    //We found the user
+    return true;
   }
   return false;
 }
 
 bool user_teleport(const char* user, double x, double y, double z)
 {
-  User* tempUser = userFromName(std::string(user));
-  if (tempUser != NULL)
+  if(Ptr<User> result = (Mineserver::get()->userFromName(std::string(user))))
   {
-    tempUser->teleport(x, y, z);
+    result->teleport(x, y, z);
     return true;
   }
   return false;
@@ -514,10 +469,10 @@ bool user_teleportMap(const char* user, double x, double y, double z, size_t map
   {
     return false;
   }
-  User* tempUser = userFromName(std::string(user));
-  if (tempUser != NULL && map != tempUser->pos.map)
+  
+  if(Ptr<User> result = (Mineserver::get()->userFromName(std::string(user))))
   {
-    tempUser->teleport(x, y, z, map);
+    result->teleport(x, y, z, map);
     return true;
   }
   return false;
@@ -525,10 +480,9 @@ bool user_teleportMap(const char* user, double x, double y, double z, size_t map
 
 bool user_sethealth(const char* user, int userHealth)
 {
-  User* tempUser = userFromName(std::string(user));
-  if (tempUser != NULL)
+  if(Ptr<User> result = (Mineserver::get()->userFromName(std::string(user))))
   {
-    tempUser->sethealth(userHealth);
+    result->sethealth(userHealth);
     return true;
   }
   return false;
@@ -536,30 +490,28 @@ bool user_sethealth(const char* user, int userHealth)
 
 int user_gethealth(const char* user)
 {
-  User* tempUser = userFromName(std::string(user));
-  if (tempUser != NULL)
+  if(Ptr<User> result = (Mineserver::get()->userFromName(std::string(user))))
   {
-    return tempUser->health;
+    return result->health;
   }
   return 0;
 }
 
 int user_getCount()
 {
-  return Mineserver::get()->users().size();
+  return Mineserver::get()->userCount();
 }
 
 char* user_getUserNumbered(int c)
 {
-  return (char*)Mineserver::get()->users()[c]->nick.c_str();
+  return (char*)Mineserver::get()->userFromIndex(c)->nick.c_str();
 }
 
 bool user_getItemInHand(const char* user, int* type, int* meta, int* quant)
 {
-  User* tempUser = userFromName(std::string(user));
-  if (tempUser != NULL)
+  if(Ptr<User> result = (Mineserver::get()->userFromName(std::string(user))))
   {
-    Item item = tempUser->inv[tempUser->curItem + 36];
+    Item item = result->inv[result->curItem + 36];
     if (type != NULL)
     {
       *type = item.getType();
@@ -587,10 +539,9 @@ bool user_setItemInHand(const char* user, int type, int meta, int quant)
   {
     quant = 0;
   }
-  User* tempUser = userFromName(std::string(user));
-  if (tempUser != NULL)
+  if(Ptr<User> result = (Mineserver::get()->userFromName(std::string(user))))
   {
-    Item* item = &tempUser->inv[tempUser->curItem + 36];
+    Item* item = &result->inv[result->curItem + 36];
     item->setHealth(meta);
     item->setCount(quant);
     if (item->getType() != -1)
@@ -605,8 +556,7 @@ bool user_setItemInHand(const char* user, int type, int meta, int quant)
 bool user_addItem(const char* user, int item, int count, int health)
 {
   int total = count;
-  User* tempuser = userFromName(std::string(user));
-  if (tempuser != NULL)
+  if(Ptr<User> result = (Mineserver::get()->userFromName(std::string(user))))
   {
     bool checkingTaskbar = true;
     for (uint8_t i = 36 - 9; i < 36 - 9 || checkingTaskbar; i++)
@@ -616,7 +566,7 @@ bool user_addItem(const char* user, int item, int count, int health)
         checkingTaskbar = false;
         i = 0;
       }
-      Item* slot = &tempuser->inv[i + 9];
+      Item* slot = &result->inv[i + 9];
       if (item == slot->getType() && health == slot->getHealth())
       {
         if (slot->getCount() < 64)
@@ -660,8 +610,8 @@ bool user_addItem(const char* user, int item, int count, int health)
 
 bool user_hasItem(const char* user, int item, int count, int health)
 {
-  User* tempuser = userFromName(std::string(user));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(user)));
+  if(!result)
   {
     return false;
   }
@@ -676,7 +626,7 @@ bool user_hasItem(const char* user, int item, int count, int health)
       checkingTaskbar = false;
       i = 0;
     }
-    Item* slot = &tempuser->inv[i + 9];
+    Item* slot = &result->inv[i + 9];
     if (item == slot->getType() && (health == slot->getHealth() || health == -1))
     {
       total += slot->getCount();
@@ -691,8 +641,8 @@ bool user_hasItem(const char* user, int item, int count, int health)
 
 bool user_delItem(const char* user, int item, int count, int health)
 {
-  User* tempuser = userFromName(std::string(user));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(user)));
+  if (!result)
   {
     return false;
   }
@@ -707,7 +657,7 @@ bool user_delItem(const char* user, int item, int count, int health)
       checkingTaskbar = false;
       i = 0;
     }
-    Item* slot = &tempuser->inv[i + 9];
+    Item* slot = &result->inv[i + 9];
     if (item == slot->getType() && (health == slot->getHealth() || health == -1))
     {
       if (slot->getCount() > total)
@@ -729,23 +679,23 @@ bool user_delItem(const char* user, int item, int count, int health)
 
 bool user_kick(const char* user)
 {
-  User* tempuser = userFromName(std::string(user));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(user)));
+  if (!result)
   {
     return false;
   }
-  tempuser->kick("You have been kicked!"); // Need to allow other languages.
+  result->kick("You have been kicked!"); // Need to allow other languages.
   return true;
 }
 
 bool user_getItemAt(const char* user, int slotn, int* type, int* meta, int* quant)
 {
-  User* tempuser = userFromName(std::string(user));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(user)));
+  if (!result)
   {
     return false;
   }
-  Item* slot = &tempuser->inv[slotn];
+  Item* slot = &result->inv[slotn];
   if (type != NULL)
   {
     *type = slot->getType();
@@ -763,12 +713,12 @@ bool user_getItemAt(const char* user, int slotn, int* type, int* meta, int* quan
 
 bool user_setItemAt(const char* user, int slotn, int type, int meta, int quant)
 {
-  User* tempuser = userFromName(std::string(user));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(user)));
+  if (!result)
   {
     return false;
   }
-  Item* slot = &tempuser->inv[slotn];
+  Item* slot = &result->inv[slotn];
   slot->setType(type);
   if (slot->getType() != -1)
   {
@@ -966,89 +916,89 @@ bool mob_getMobPositionW(int uid, double* x, double* y, double* z, int* w)
 
 bool permission_setAdmin(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  SET_ADMIN(tempuser->permissions);
+  SET_ADMIN(result->permissions);
   return true;
 }
 
 bool permission_setOp(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  tempuser->permissions = 0; // reset any previous permissions
-  SET_OP(tempuser->permissions);
+  result->permissions = 0; // reset any previous permissions
+  SET_OP(result->permissions);
   return true;
 }
 
 bool permission_setMember(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  tempuser->permissions = 0; // reset any previous permissions
-  SET_MEMBER(tempuser->permissions);
+  result->permissions = 0; // reset any previous permissions
+  SET_MEMBER(result->permissions);
   return true;
 }
 
 bool permission_setGuest(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  tempuser->permissions = 0; // reset any previous permissions
-  SET_GUEST(tempuser->permissions);
+  result->permissions = 0; // reset any previous permissions
+  SET_GUEST(result->permissions);
   return true;
 }
 
 bool permission_isAdmin(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  return IS_ADMIN(tempuser->permissions);
+  return IS_ADMIN(result->permissions);
 }
 
 bool permission_isOp(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  return IS_OP(tempuser->permissions);
+  return IS_OP(result->permissions);
 }
 
 bool permission_isMember(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  return IS_MEMBER(tempuser->permissions);
+  return IS_MEMBER(result->permissions);
 }
 
 bool permission_isGuest(const char* name)
 {
-  User* tempuser = userFromName(std::string(name));
-  if (tempuser == NULL)
+  Ptr<User> result = (Mineserver::get()->userFromName(std::string(name)));
+  if (!result)
   {
     return false;
   }
-  return IS_GUEST(tempuser->permissions);
+  return IS_GUEST(result->permissions);
 }
 
 void init_plugin_api(void)

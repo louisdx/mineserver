@@ -98,7 +98,7 @@ public:
   eTAG_Type GetType();
   void cleanup();
 
-  static NBT_Value* LoadFromFile(const std::string& filename);
+  static std::auto_ptr<NBT_Value> LoadFromFile(const std::string& filename);
   static NBT_Value* LoadFromMemory(uint8_t* buffer, uint32_t len);
   void SaveToFile(const std::string& filename);
   void SaveToMemory(uint8_t* buffer, uint32_t* len);

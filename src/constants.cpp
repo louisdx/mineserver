@@ -29,7 +29,7 @@
 
 #include "constants.h"
 
-std::map<uint8_t, Drop*> BLOCKDROPS;
+std::map<uint8_t, boost::shared_ptr<Drop> > BLOCKDROPS;
 
 void initConstants()
 {
@@ -95,19 +95,9 @@ void initConstants()
   BLOCKDROPS.insert(std::pair<uint8_t, Drop*>(BLOCK_DOUBLE_STEP, new Drop(BLOCK_STEP, 10000, 2)));
 
   // Blocks that drop items by chance
-  BLOCKDROPS.insert(std::pair<uint8_t, Drop*>(BLOCK_GRAVEL, new Drop(ITEM_FLINT, 850, 1, new Drop(BLOCK_GRAVEL, 10000, 1))));
+  BLOCKDROPS.insert(std::pair<uint8_t, Drop*>(BLOCK_GRAVEL, new Drop(ITEM_FLINT, 850, 1,boost::shared_ptr<Drop>(new Drop(BLOCK_GRAVEL, 10000, 1)))));
   BLOCKDROPS.insert(std::pair<uint8_t, Drop*>(BLOCK_LEAVES, new Drop(BLOCK_SAPLING, 1200, 1)));
 
   // Blocks that drop nothing:
   // BLOCK_TNT, BLOCK_GLASS, BLOCK_MOB_SPAWNER
-}
-
-void freeConstants()
-{
-  std::map<uint8_t, Drop*>::iterator it_a = BLOCKDROPS.begin();
-  std::map<uint8_t, Drop*>::iterator it_b = BLOCKDROPS.end();
-  for (; it_a != it_b; ++it_a)
-  {
-    delete it_a->second;
-  }
 }

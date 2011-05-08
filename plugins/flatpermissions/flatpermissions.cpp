@@ -82,6 +82,7 @@ bool loginPost(const char* userIn){
     }
     file.close();
   }
+  return true;
 }
 
 

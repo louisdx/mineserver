@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2010, The Mineserver Project
+   Copyright (c) 2011, The Mineserver Project
    All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -25,27 +25,32 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _KIT_H
-#define _KIT_H
+#include "..\util\Enum.h"
 
-#include <string>
-#include <vector>
-
-/**
- * A Kit represents a list of items that a player can spawn (if given
- * the required permissions a Kit has), via the /kit command.
- */
-struct Kit
+enum EClientToServerPacket_raw
 {
-  std::string name;
-  std::vector<int> items;
-  int permissions;
-
-  Kit(std::string name, std::vector<int> items, int permissions)
-    : name(name),
-      items(items),
-      permissions(permissions)
-  {}
+	eClientToServerPacket_Keep_alive                = 0x00,
+	eClientToServerPacket_Login_request             = 0x01,
+	eClientToServerPacket_Handshake                 = 0x02,
+	eClientToServerPacket_Chat_message              = 0x03,
+	eClientToServerPacket_Entity_equipment          = 0x05,
+	eClientToServerPacket_Respawn                   = 0x09,
+	eClientToServerPacket_Player                    = 0x0a,
+	eClientToServerPacket_Player_position           = 0x0b,
+	eClientToServerPacket_Player_look               = 0x0c,
+	eClientToServerPacket_Player_position_and_look  = 0x0d,
+	eClientToServerPacket_Player_digging            = 0x0e,
+	eClientToServerPacket_Player_block_placement    = 0x0f,
+	eClientToServerPacket_Holding_change            = 0x10,
+	eClientToServerPacket_Arm_animation             = 0x12,
+	eClientToServerPacket_Entity_crouch             = 0x13,
+	eClientToServerPacket_Inventory_close           = 0x65,
+	eClientToServerPacket_Inventory_change          = 0x66,
+	eClientToServerPacket_Set_slot                  = 0x67,
+	eClientToServerPacket_Inventory                 = 0x68,
+	eClientToServerPacket_Sign                      = 0x82,
+	eClientToServerPacket_Disconnect                = 0xff,
+	eClientToServerPacket_Use_entity				= 0x07,
 };
 
-#endif /* _KIT_H */
+DeclareEnum(EClientToServerPacket_raw,EClientToServerPacket);

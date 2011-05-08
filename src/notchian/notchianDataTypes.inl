@@ -1,6 +1,6 @@
 /*
-  Copyright (c) 2011, The Mineserver Project
-  All rights reserved.
+   Copyright (c) 2011, The Mineserver Project
+   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -23,10 +23,8 @@
   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
-#ifndef _CONFIG_LEXER_H
-#define _CONFIG_LEXER_H
 
 #include <string>
 #include <stack>
@@ -51,9 +49,16 @@ enum {
   CONFIG_TOKEN_TERMINATOR = 30
 };
 
-class ConfigScanner;
+// do not allow implicit conversion to notchian types
+template<class BaseType>
+NotchianType<BaseType>::NotchianType(BaseType val)
+:mVal(val)
+{
+}
 
-class ConfigLexer
+// allow implicit conversion from notchian types
+template<class BaseType>
+NotchianType<BaseType>::operator BaseType()
 {
   typedef std::pair<int, std::string> Token;
   typedef std::tr1::shared_ptr<Token> TokenPtr;
@@ -69,4 +74,9 @@ private:
   std::stack<TokenPtr> m_tokenStack;
 };
 
-#endif
+template<class BaseType>
+NotchianType<BaseType>& NotchianType<BaseType>::operator =(const BaseType& rhs)
+{
+	mVal = rhs;
+	return *this;
+}

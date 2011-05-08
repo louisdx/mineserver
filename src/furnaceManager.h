@@ -32,6 +32,8 @@
 #include <vector>
 #include "chunkmap.h"
 
+#include <boost/shared_ptr.hpp>
+
 class Furnace;
 class NBT_Value;
 
@@ -42,7 +44,7 @@ public:
   void handleActivity(furnaceData* data_);
   void removeFurnace(furnaceData* data_);
 private:
-  typedef std::vector<Furnace*> FurnaceContainer;
+  typedef std::vector< boost::shared_ptr<Furnace> > FurnaceContainer;
   FurnaceContainer m_activeFurnaces;
 };
 

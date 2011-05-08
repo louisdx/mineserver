@@ -40,46 +40,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "chat.h"
 
+#include "boost/scoped_array.hpp"
 using std::min;
 
-Chat::Chat()
-{
-}
+using std::min;
 
-Chat::~Chat()
-{
-}
+std::vector<std::string> parseCmd(std::string cmd);
 
-bool Chat::sendUserlist(User* user)
-{
-  this->sendMsg(user, MC_COLOR_BLUE + "[ " + dtos(User::all().size()) + " / " + dtos(Mineserver::get()->config()->iData("system.user_limit")) + " players online ]", USER);
-  std::string playerDesc;
-  for (unsigned int i = 0; i < User::all().size(); i++)
-  {
-    if (!User::all()[i]->logged)
-    {
-      continue;
-    }
-    playerDesc += User::all()[i]->nick;
-    if (User::all()[i]->muted)
-    {
-      playerDesc += MC_COLOR_YELLOW + " (muted)";
-    }
-    if (User::all()[i]->dnd)
-    {
-      playerDesc += MC_COLOR_YELLOW + " (dnd)";
-    }
-    playerDesc += ", ";
-  }
-  this->sendMsg(user, playerDesc, USER);
+// TODO support this feature
+//bool Chat::sendUserlist(NonNull<User> user)
+//{
+//  sendMsg(user, MC_COLOR_BLUE + "[ " + dtos(Mineserver::get()->userCount()) + " / " + dtos(Mineserver::get()->config()->iData("system.user_limit")) + " players online ]", USER);
+//
+//  std::string playerDesc;
+//  for (unsigned int i = 0; i < User::all().size(); i++)
+//  {
+//    if (!User::all()[i]->logged)
+//    {
+//      continue;
+//    }
+//    playerDesc += User::all()[i]->nick;
+//    if (User::all()[i]->muted)
+//    {
+//      playerDesc += MC_COLOR_YELLOW + " (muted)";
+//    }
+//    if (User::all()[i]->dnd)
+//    {
+//      playerDesc += MC_COLOR_YELLOW + " (dnd)";
+//    }
+//    playerDesc += ", ";
+//  }
+//  sendMsg(user, playerDesc, USER);
+//
+//  return true;
+//}
 
-  return true;
-}
-
-std::deque<std::string> Chat::parseCmd(std::string cmd)
+std::vector<std::string> parseCmd(std::string cmd)
 {
   int del;
-  std::deque<std::string> temp;
+  std::vector<std::string> temp;
 
   while (cmd.length() > 0)
   {
@@ -110,7 +109,7 @@ std::deque<std::string> Chat::parseCmd(std::string cmd)
   return temp;
 }
 
-bool Chat::handleMsg(User* user, std::string msg)
+bool Chat::handleMsg(NonNull<User> user, std::string msg)
 {
   if (msg.empty()) // If the message is empty handle it as if there is no message.
   {
@@ -160,19 +159,15 @@ bool Chat::handleMsg(User* user, std::string msg)
   return true;
 }
 
-void Chat::handleCommand(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleCommand(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
-  std::deque<std::string> cmd = parseCmd(msg.substr(1));
-
+  std::vector<std::string> cmd = parseCmd(msg.substr(1));
   if (!cmd.size() || !cmd[0].size())
   {
     return;
   }
 
-  std::string command = cmd[0];
-  cmd.pop_front();
-
-  char** param = new char *[cmd.size()];
+  boost::scoped_array<char*> param(new char *[cmd.size()]);
 
   for (uint32_t i = 0; i < cmd.size(); i++)
   {
@@ -180,7 +175,9 @@ void Chat::handleCommand(User* user, std::string msg, const std::string& timeSta
   }
 
   // If hardcoded auth command!
-  if (command == "auth" && param[0] == Mineserver::get()->config()->sData("system.admin.password"))
+  if ((cmd.size()==2)&&
+    (cmd[0] == "auth") && 
+    (cmd[1] == Mineserver::get()->config()->sData("system.admin.password")))
   {
     user->serverAdmin = true;
     msg = MC_COLOR_RED + "[!] " + MC_COLOR_GREEN + "You have been authed as admin!";
@@ -188,30 +185,27 @@ void Chat::handleCommand(User* user, std::string msg, const std::string& timeSta
   }
   else
   {
-    (static_cast<Hook4<bool, const char*, const char*, int, const char**>*>(Mineserver::get()->plugin()->getHook("PlayerChatCommand")))->doAll(user->nick.c_str(), command.c_str(), cmd.size(), (const char**)param);
+    (static_cast<Hook4<bool, const char*, const char*, int, const char**>*>(Mineserver::get()->plugin()->getHook("PlayerChatCommand")))->doAll(user->nick.c_str(), param[0], cmd.size(), (const char**)&param[0]);
   }
-
-  delete [] param;
-
 }
 
 
-void Chat::handleServerMsg(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleServerMsg(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
   // Decorate server message
   LOG2(INFO, "[!] " + msg.substr(1));
   msg = MC_COLOR_RED + "[!] " + MC_COLOR_GREEN + msg.substr(1);
-  this->sendMsg(user, msg, ALL);
+  sendMsg(user, msg, ALL);
 }
 
-void Chat::handleAdminChatMsg(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleAdminChatMsg(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
   LOG2(INFO, "[@] <" + user->nick + "> " + msg.substr(1));
   msg = timeStamp +  MC_COLOR_RED + " [@]" + MC_COLOR_WHITE + " <" + MC_COLOR_DARK_MAGENTA + user->nick + MC_COLOR_WHITE + "> " + msg.substr(1);
-  this->sendMsg(user, msg, ADMINS);
+  sendMsg(user, msg, ADMINS);
 }
 
-void Chat::handleChatMsg(User* user, std::string msg, const std::string& timeStamp)
+void Chat::handleChatMsg(NonNull<User> user, std::string msg, const std::string& timeStamp)
 {
   if (user->isAbleToCommunicate("chat") == false)
   {
@@ -235,16 +229,16 @@ void Chat::handleChatMsg(User* user, std::string msg, const std::string& timeSta
     msg = timeStamp + " <" + user->nick + "> " + msg;
   }
 
-  this->sendMsg(user, msg, ALL);
+  sendMsg(user, msg, ALL);
 }
 
-bool Chat::sendMsg(User* user, std::string msg, MessageTarget action)
+bool Chat::sendMsg(NonNull<User> user, std::string msg, MessageTarget action)
 {
   std::wstring wMsg = stows(msg);
-  uint32_t strLength = min((uint32_t)kMaxChatMessageLength,(uint32_t)wMsg.size());
+  int strLength = min(kMaxChatMessageLength,wMsg.size());
   size_t tmpArrayLen = strLength*2 + 3;
 
-  uint8_t* tmpArray    = new uint8_t[tmpArrayLen];
+  boost::scoped_array<uint8_t> tmpArray(new uint8_t[tmpArrayLen]);
 
   tmpArray[0] = 0x03;
   tmpArray[1] = 0;
@@ -260,31 +254,29 @@ bool Chat::sendMsg(User* user, std::string msg, MessageTarget action)
   switch (action)
   {
   case ALL:
-    user->sendAll(tmpArray, tmpArrayLen);
+    user->sendAll(tmpArray.get(), tmpArrayLen);
     break;
 
   case USER:
-    user->buffer.addToWrite(tmpArray, tmpArrayLen);
+    user->buffer.addToWrite(tmpArray.get(), tmpArrayLen);
     break;
 
   case ADMINS:
-    user->sendAdmins(tmpArray, tmpArrayLen);
+    user->sendAdmins(tmpArray.get(), tmpArrayLen);
     break;
 
   case OPS:
-    user->sendOps(tmpArray, tmpArrayLen);
+    user->sendOps(tmpArray.get(), tmpArrayLen);
     break;
 
   case GUESTS:
-    user->sendGuests(tmpArray, tmpArrayLen);
+    user->sendGuests(tmpArray.get(), tmpArrayLen);
     break;
 
   case OTHERS:
-    user->sendOthers(tmpArray, tmpArrayLen);
+    user->sendOthers(tmpArray.get(), tmpArrayLen);
     break;
   }
-
-  delete[] tmpArray;
 
   return true;
 }

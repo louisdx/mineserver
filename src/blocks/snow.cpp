@@ -40,39 +40,23 @@ bool BlockSnow::affectedBlock(int block)
   return false;
 }
 
-
-
-void BlockSnow::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockSnow::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockSnow::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-bool BlockSnow::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  uint8_t block;
-  uint8_t meta;
-
-  if (!Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta))
-  {
-    revertBlock(user, x, y, z, map);
-    return true;
-  }
-
-  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
-  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  this->spawnBlockItem(x, y, z, map, block, meta);
-  return false;
-}
+// seems unneeded
+//bool BlockSnow::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
+//{
+//  uint8_t block;
+//  uint8_t meta;
+//
+//  if (!Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta))
+//  {
+//    revertBlock(user, x, y, z, map);
+//    return true;
+//  }
+//
+//  Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
+//  Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
+//  this->spawnBlockItem(x, y, z, map, block, meta);
+//  return false;
+//}
 
 void BlockSnow::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
@@ -126,13 +110,5 @@ bool BlockSnow::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32
   Mineserver::get()->map(map)->setBlock(x, y, z, (char)newblock, direction);
   Mineserver::get()->map(map)->sendBlockChange(x, y, z, (char)newblock, direction);
   return false;
-}
-
-void BlockSnow::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockSnow::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
 }
 

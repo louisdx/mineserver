@@ -23,7 +23,7 @@
   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 #include <cmath>
 #include "tree.h"
@@ -69,39 +69,40 @@ void Tree::generate(uint8_t limit)
   {
     if (smalltree)
     {
-      Trunk* v = new Trunk(_x, _y + i, _z, _map, type);
-      if (i >= MIN_TRUNK - 1)
+      // create a new branch (which does stuff)
+      m_Branch[n_branches].reset( new Trunk(_x, _y + i, _z, _map, type));
+      n_branches++;// increase the number of branches
+      if (i >= MIN_TRUNK - 1) 
       {
-        m_Branch[n_branches] = v;
-        n_branches++;
       }
-      else
+      else// delete the branch and decrease the number of branches
       {
-        delete v;
+        m_Branch[n_branches].reset();
+        n_branches--;
       }
     }
     else
     {
-      Trunk* v = new Trunk(_x, _y + i, _z, _map, type);
+      // create a new branch (which does stuff)
+      m_Branch[n_branches].reset( new Trunk(_x, _y + i, _z, _map, type));
+      n_branches++;
       if (i > BRANCHING_HEIGHT - 1)
       {
-        generateBranches(v);
-        m_Branch[n_branches] = v;
-        n_branches++;
+        generateBranches(m_Branch[n_branches-1].get());
       }
-      else
+      else// delete the branch and decrease the number of branches
       {
-        delete v;
+        m_Branch[n_branches].reset();
+        n_branches--;
       }
     }
   }
-  Trunk* v = new Trunk(_x, _y + i, _z, _map, type);
-  m_Branch[n_branches] = v;
+  m_Branch[n_branches].reset( new Trunk(_x, _y + i, _z, _map, type));
   n_branches++;
-  generateBranches(v);
+  generateBranches(m_Branch[n_branches-1].get());
   generateCanopy();
 }
-void Tree::generateBranches(Trunk* wrap)
+void Tree::generateBranches(NonNull<Trunk> wrap)
 {
   uint8_t blocktype;
   uint8_t meta;
@@ -136,10 +137,9 @@ void Tree::generateBranches(Trunk* wrap)
       y++;
     }
 
-    Trunk* v = new Trunk(x, y, z, _map);
-    m_Branch[n_branches] = v;
+    m_Branch[n_branches].reset( new Trunk(x, y, z, _map));
     n_branches++;
-    generateBranches(v);
+    generateBranches(m_Branch[n_branches-1].get());
   }
 }
 
@@ -170,7 +170,7 @@ void Tree::generateCanopy()
     posx = m_Branch[i]->_x;
     posy = m_Branch[i]->_y;
     posz = m_Branch[i]->_z;
-    delete m_Branch[i];
+    m_Branch[i].reset();
 
     for (int8_t xi = (-canopySize); xi <= canopySize; xi++)
     {

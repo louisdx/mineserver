@@ -32,9 +32,10 @@
 #include <list>
 #include <vector>
 #include <ctime>
-#include <tr1/unordered_map>
 
-#include "packets.h"
+#include <boost/tr1/unordered_map.hpp>
+
+#include "./packets/packets.h"
 #include "user.h"
 #include "nbt.h"
 
@@ -218,6 +219,5 @@ struct PairHash : public std::unary_function<std::pair<S, T>, size_t>
 
 typedef std::pair<int, int> Coords;
 typedef std::tr1::unordered_map<Coords, sChunk*, PairHash<int, int> > ChunkMap;
-
 
 #endif

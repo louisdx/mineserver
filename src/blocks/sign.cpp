@@ -44,19 +44,6 @@ bool BlockSign::affectedBlock(int block)
   return false;
 }
 
-
-void BlockSign::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockSign::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockSign::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
 bool BlockSign::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
@@ -252,12 +239,4 @@ bool BlockSign::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32
   Mineserver::get()->map(map)->setBlock(x, y, z, (char)newblock, metadata);
   Mineserver::get()->map(map)->sendBlockChange(x, y, z, (char)newblock, metadata);
   return false;
-}
-
-void BlockSign::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-}
-
-void BlockSign::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
 }

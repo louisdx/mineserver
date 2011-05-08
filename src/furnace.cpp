@@ -285,13 +285,13 @@ void Furnace::sendToAllUsers()
         {
           if (data->items[j].getType() != -1)
           {
-            (*inv)[openinv]->users[user]->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)data->items[j].getType()
-                                                 << (int8_t)(data->items[j].getCount()) << (int16_t)data->items[j].getHealth();
+            (*inv)[openinv]->users[user]->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)data->items[j].getType()
+              << (int8_t)(data->items[j].getCount()) << (int16_t)data->items[j].getHealth();
           }
         }
 
-        (*inv)[openinv]->users[user]->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_ARROW << (int16_t)(data->cookTime * 18);
-        (*inv)[openinv]->users[user]->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_FIRE  << (int16_t)(data->burnTime * 3);
+        (*inv)[openinv]->users[user]->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_ARROW << (int16_t)(data->cookTime * 18);
+        (*inv)[openinv]->users[user]->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)PROGRESS_FIRE  << (int16_t)(data->burnTime * 3);
       }
 
       break;
@@ -305,8 +305,9 @@ void readConfig()
   const std::string key = "furnace.items";
   if (Mineserver::get()->config()->has(key) && Mineserver::get()->config()->type(key) == CONFIG_NODE_LIST)
   {
-    std::list<std::string> tmp = Mineserver::get()->config()->mData(key)->keys();
-    for (std::list<std::string>::const_iterator it = tmp.begin(); it != tmp.end(); ++it)
+    std::auto_ptr< std::list<std::string> > tmp(Mineserver::get()->config()->mData(key)->keys());
+
+    for (std::list<std::string>::const_iterator it = tmp->begin(); it != tmp->end(); ++it)
     {
       int input = Mineserver::get()->config()->iData(key + "." + *it + ".in");
       createList[input].output = Mineserver::get()->config()->iData(key + "." + *it + ".out");

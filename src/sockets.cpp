@@ -61,8 +61,10 @@ typedef  int socklen_t;
 #include "nbt.h"
 #include "mineserver.h"
 
-#include "packets.h"
+#include "./packets/packets.h"
 #include <algorithm>
+
+#include <boost/scoped_array.hpp>
 
 extern int setnonblock(int fd);
 
@@ -77,7 +79,7 @@ void client_callback(int fd,
   User* user = (User*)arg;
   /*
   std::vector<User *>::const_iterator it = std::find (Mineserver::get()->users().begin(),
-                                                      Mineserver::get()->users().end(), user);
+  Mineserver::get()->users().end(), user);
   if(it == Mineserver::get()->users().end())
   {
     LOG2(INFO, "Using dead player!!!");
@@ -89,16 +91,15 @@ void client_callback(int fd,
 
     int read   = 1;
 
-    uint8_t* buf = new uint8_t[2048];
+    boost::scoped_array<uint8_t> buf(new uint8_t[2048]);
 
-    read = recv(fd, (char*)buf, 2048, 0);
+    read = recv(fd, (char*)buf.get(), 2048, 0);
     if (read == 0)
     {
       LOG2(INFO, "Socket closed properly");
 
-      delete user;
+      user->mQueuedForDelete=true;
       user = (User*)1;
-      delete[] buf;
       return;
     }
 
@@ -106,17 +107,14 @@ void client_callback(int fd,
     {
       LOG2(INFO, "Socket had no data to read");
 
-      delete user;
+      user->mQueuedForDelete=true;
       user = (User*)2;
-      delete[] buf;
       return;
     }
 
     user->lastData = time(NULL);
 
-    user->buffer.addToRead(buf, read);
-
-    delete[] buf;
+    user->buffer.addToRead(buf.get(), read);
 
     user->buffer.reset();
 
@@ -129,7 +127,7 @@ void client_callback(int fd,
         int (PacketHandler::*function)(User*) =
           Mineserver::get()->packetHandler()->packets[user->action].function;
         bool disconnecting = user->action == 0xFF;
-        int curpos = (Mineserver::get()->packetHandler()->*function)(user);
+        int curpos = (Mineserver::get()->packetHandler().get()->*function)(user);
         if (curpos == PACKET_NEED_MORE_DATA)
         {
           user->waitForData = true;
@@ -140,7 +138,7 @@ void client_callback(int fd,
 
         if (disconnecting) // disconnect -- player gone
         {
-          delete user;
+          user->mQueuedForDelete=true;
           user = (User*)4;
           return;
         }
@@ -151,7 +149,7 @@ void client_callback(int fd,
         str << "Unknown action: 0x" << std::hex << user->action;
         LOG2(DEBUG, str.str());
 
-        delete user;
+        user->mQueuedForDelete=true;
         user = (User*)3;
         return;
       }
@@ -167,7 +165,7 @@ void client_callback(int fd,
 
         //Call specific function
         int (PacketHandler::*function)(User*) = Mineserver::get()->packetHandler()->packets[user->action].function;
-        (Mineserver::get()->packetHandler()->*function)(user);
+        (Mineserver::get()->packetHandler().get()->*function)(user);
       }
     } //End while
   }
@@ -188,7 +186,7 @@ void client_callback(int fd,
       {
         LOG2(ERROR, "Error writing to client, tried to write " + dtos(writeLen) + " bytes, code: " + dtos(ERROR_NUMBER));
 
-        delete user;
+        user->mQueuedForDelete=true;
         user = (User*)5;
         return;
       }
@@ -233,10 +231,11 @@ void accept_callback(int fd,
     LOGLF("Client: accept() failed");
     return;
   }
-  User* client = new User(client_fd, Mineserver::generateEID());
+
+  NonNull<User> client(Mineserver::get()->createUser(client_fd));
   setnonblock(client_fd);
 
-  event_set(client->GetEvent(), client_fd, EV_WRITE | EV_READ, client_callback, client);
+  event_set(client->GetEvent(), client_fd, EV_WRITE | EV_READ, client_callback, client.get());
   event_add(client->GetEvent(), NULL);
 
 }

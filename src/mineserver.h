@@ -31,6 +31,8 @@
 #include <vector>
 #include <string>
 
+#include <boost/function.hpp>
+
 #ifdef WIN32
 // This is needed for event to work on Windows.
 #include <winsock2.h>
@@ -40,9 +42,14 @@
 #endif
 #include <event.h>
 
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include "util/NonNull.h"
+#include "util/Ptr.h"
+
 class User;
 class Map;
-class Chat;
 class Plugin;
 class Screen;
 class Config;
@@ -50,7 +57,6 @@ class FurnaceManager;
 class PacketHandler;
 class Physics;
 class MapGen;
-class Logger;
 class Inventory;
 class Mobs;
 class Mob;
@@ -65,23 +71,9 @@ struct event_base;
 class Mineserver
 {
 public:
-  static Mineserver* get()
-  {
-    static Mineserver* m_instance = NULL;
+  static Mineserver* get();
 
-    if (!m_instance)
-    {
-      m_instance = new Mineserver;
-    }
-
-    return m_instance;
-  }
-
-  static uint32_t generateEID()
-  {
-    static uint32_t m_EID = 0;
-    return ++m_EID;
-  }
+  static uint32_t generateEID();
 
 
   bool init();
@@ -92,15 +84,27 @@ public:
 
   event_base* getEventBase();
 
-  inline std::vector<User*>& users()
-  {
-    return m_users;
-  }
+  // allowed to modify users, but not delete them!
+  void forEachUser(boost::function<void(NonNull<User>)>);
 
-  inline const std::vector<User*>& users() const
-  {
-    return m_users;
-  }
+  // not allowed to modify users! but allowed to delete them
+  void forEachUserRemoveIfTrue(boost::function<bool(NonNull<User const> const)>);
+
+  // O(N) search, use sparingly
+  Ptr<User> userFromName(std::string user, bool caseSensative = false);
+
+  // returns the first user where condition returns true
+  Ptr<User> findUser(boost::function<bool(NonNull<User>)> condition);
+
+  // number of current users
+  size_t userCount() const;
+
+  inline NonNull<User> userFromIndex(size_t index);
+  Ptr<User> userFromEID(unsigned int EID);
+
+  NonNull<User> createUser(int sock);
+
+  inline NonNull<User> serverUser() const;
 
   struct event m_listenEvent;
   int m_socketlisten;
@@ -112,93 +116,18 @@ public:
   bool m_damage_enabled;
   bool m_only_helmets;
 
-  Map* map(size_t n) const;
-  inline void setMap(Map* map, size_t n = 0)
-  {
-    m_map[n] = map;
-  }
-  inline size_t mapCount()
-  {
-    return m_map.size();
-  }
-  inline Chat* chat() const
-  {
-    return m_chat;
-  }
-  inline void setChat(Chat* chat)
-  {
-    m_chat = chat;
-  }
-  inline Mobs* mobs() const
-  {
-    return m_mobs;
-  }
-  inline Plugin* plugin() const
-  {
-    return m_plugin;
-  }
-  inline void setPlugin(Plugin* plugin)
-  {
-    m_plugin = plugin;
-  }
-  inline Screen* screen() const
-  {
-    return m_screen;
-  }
-  inline void setScreen(Screen* screen)
-  {
-    m_screen = screen;
-  }
-  inline Physics* physics(size_t n) const
-  {
-    return m_physics[n];
-  }
-  inline Config* config() const
-  {
-    return m_config;
-  }
-  inline void setConfig(Config* config)
-  {
-    m_config = config;
-  }
-  inline FurnaceManager* furnaceManager() const
-  {
-    return m_furnaceManager;
-  }
-  inline void setFurnaceManager(FurnaceManager* furnaceManager)
-  {
-    m_furnaceManager = furnaceManager;
-  }
-  inline PacketHandler* packetHandler() const
-  {
-    return m_packetHandler;
-  }
-  inline void setPacketHandler(PacketHandler* packetHandler)
-  {
-    m_packetHandler = packetHandler;
-  }
-  inline MapGen* mapGen(size_t n) const
-  {
-    return m_mapGen[n];
-  }
-  inline Logger* logger() const
-  {
-    return m_logger;
-  }
-  inline void setLogger(Logger* logger)
-  {
-    m_logger = logger;
-  }
-  inline Inventory* inventory() const
-  {
-    return m_inventory;
-  }
-  inline void setInventory(Inventory* inventory)
-  {
-    m_inventory = m_inventory;
-  }
+  inline Ptr<Map> map(size_t n);
+  inline size_t mapCount();
+  inline NonNull<Mobs> mobs();
+  inline NonNull<Plugin> plugin();
+  inline NonNull<Screen> screen();
+  inline NonNull<Physics> physics(size_t n);
+  inline NonNull<Config> config();
+  inline NonNull<FurnaceManager> furnaceManager();
+  inline NonNull<PacketHandler> packetHandler();
+  inline NonNull<MapGen> mapGen(size_t n);
+  inline NonNull<Inventory> inventory();
 
-  void saveAllPlayers();
   void saveAll();
 
   bool homePrepare(const std::string& path);
@@ -212,24 +141,28 @@ private:
   event_base* m_eventBase;
 
   // holds all connected users
-  std::vector<User*>    m_users;
+  std::vector< boost::shared_ptr<User> >    m_users;
+  boost::scoped_ptr<User> mServerUser;
 
-  std::vector<Map*>     m_map;
-  std::vector<Physics*> m_physics;
-  std::vector<MapGen*>  m_mapGenNames;
-  std::vector<MapGen*>  m_mapGen;
+  struct World
+  {
+    boost::scoped_ptr<Map>		m_map;
+    boost::scoped_ptr<Physics>	m_physics;
+    boost::scoped_ptr<MapGen>	m_mapGen;
+  };
+
+  std::vector< boost::shared_ptr<World> >     mWorlds;
 
   // core modules
-  Config* m_config;
-  Screen* m_screen;
-  Logger* m_logger;
+  boost::scoped_ptr<Config> m_config;
+  boost::scoped_ptr<Screen> m_screen;
 
-  Plugin*         m_plugin;
-  Chat*           m_chat;
-  FurnaceManager* m_furnaceManager;
-  PacketHandler*  m_packetHandler;
-  Inventory*      m_inventory;
-  Mobs*           m_mobs;
+  boost::scoped_ptr<Plugin>         m_plugin;
+  boost::scoped_ptr<FurnaceManager> m_furnaceManager;
+  boost::scoped_ptr<PacketHandler>  m_packetHandler;
+  boost::scoped_ptr<Inventory>      m_inventory;
+  boost::scoped_ptr<Mobs>           m_mobs;
 };
 
+#include "mineserver.inl"
 #endif

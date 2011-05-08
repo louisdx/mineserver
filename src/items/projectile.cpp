@@ -1,5 +1,5 @@
 #include "projectile.h"
-#include "../packets.h"
+#include "../packets/packets.h"
 #include "../mineserver.h"
 #include "../map.h"
 #include <cmath>

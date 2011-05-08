@@ -25,8 +25,10 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "./notchian/EServerToClientPacket.h"
 #include "mob.h"
 #include <algorithm>
+#include <boost/bind.hpp>
 
 Mob::Mob()
   :
@@ -55,13 +57,32 @@ Mob::~Mob()
 
 //Can be 0 (no animation), 1 (swing arm), 2 (damage animation)
 //, 3 (leave bed), 104 (crouch), or 105 (uncrouch). Getting 102 somewhat often, too. 
+void sendAnimation(EClientToServerPacket packet, uint32_t UID, int animID, NonNull<User> user)
+{
+  user->buffer << (int8_t)packet << (int32_t)UID << (int8_t)animID;
+}
+
+void Mob::sendMobSpawn(NonNull<Mob> mob, NonNull<User> user)
+{
+  if (user->logged)
+  {
+    user->buffer << (int8_t)eServerToClientPacket_Mob_spawn << (int32_t) mob->UID << (int8_t) mob->type
+      << (int32_t)(mob->x * 32.0) << (int32_t)(mob->y * 32.0) << (int32_t)(mob->z * 32.0) << (int8_t) mob->yaw
+      << (int8_t) mob->pitch;
+    if (mob->type == MOB_SHEEP)
+    {
+      user->buffer << (int8_t) 0 << (int8_t) mob->meta << (int8_t) 127;
+    }
+    else
+    {
+      user->buffer << (int8_t) 127;
+    }
+  }
+}
+
 void Mob::animateMob(const char* userIn, int animID)
 { 
-  for (size_t i = 0; i < Mineserver::get()->users().size(); ++i)
-  {
-    User* user = Mineserver::get()->users()[i];
-    user->buffer << (int8_t)PACKET_ARM_ANIMATION << (int32_t)UID << (int8_t)animID;
-  }
+  Mineserver::get()->forEachUser(boost::bind(&sendAnimation, EClientToServerPacket(eClientToServerPacket_Arm_animation), UID, animID, _1));
 }
 
 void Mob::sethealth(int health)
@@ -76,13 +97,8 @@ void Mob::sethealth(int health)
   }
   if (health < this->health)
   {
-    for (size_t i = 0; i < Mineserver::get()->users().size(); i++)
-    {
-      User* user = Mineserver::get()->users()[i];
-      user->buffer << (int8_t)PACKET_ARM_ANIMATION << (int32_t)UID <<
-                   (int8_t)2 ;
-      // Hurt animation
-    }
+    // Hurt animation
+    Mineserver::get()->forEachUser(boost::bind(&sendAnimation, EClientToServerPacket(eClientToServerPacket_Arm_animation), UID, 2, _1));
   }
   this->health = health;
   if (this->health <= 0)
@@ -93,10 +109,7 @@ void Mob::sethealth(int health)
 //Possible values: 2 (entity hurt), 3 (entity dead?), 4, 5
 void Mob::animateDamage(const char* userIn, int animID)
 { 
-  for (size_t i = 0; i < Mineserver::get()->users().size(); i++) {
-    User* user = Mineserver::get()->users()[i];
-    user->buffer << (int8_t)PACKET_DEATH_ANIMATION << (int32_t)UID << (int8_t)animID;
-  }
+  Mineserver::get()->forEachUser(boost::bind(&sendAnimation, EClientToServerPacket(eServerToClientPacket_Death_animation), UID, animID, _1));
 }
 
 void Mob::moveAnimal(const char* userIn) {
@@ -115,7 +128,7 @@ void Mob::moveAnimal(const char* userIn) {
   z += vel.z()*0.01;  
   for (int i = 0; i < Mineserver::get()->users().size(); i++) {
     User* user2 = Mineserver::get()->users()[i];
-  user2->buffer << (int8_t)PACKET_ENTITY_VELOCITY << (int32_t)UID << (int16_t)vel.x() << (int16_t)vel.y() << (int16_t)vel.z();
+  user2->buffer << (int8_t)eServerToClientPacket_Entity_velocity << (int32_t)UID << (int16_t)vel.x() << (int16_t)vel.y() << (int16_t)vel.z();
   }*/
 }
 
@@ -141,37 +154,24 @@ void Mob::spawnToAll()
   {
     health = 10;
   }
-  for (size_t i = 0; i < Mineserver::get()->users().size(); i++)
+
+  Mineserver::get()->forEachUser(boost::bind(&sendMobSpawn, NonNull<Mob>(this), _1));
+
+  spawned = true;
+}
+
+void sendDespawnToAll(int32_t UID, NonNull<User> user)
+{
+  if (user->logged)
   {
-    User* user = Mineserver::get()->users()[i];
-    if (user->logged)
-    {
-      user->buffer << (int8_t)PACKET_MOB_SPAWN << (int32_t) UID << (int8_t) type
-                   << (int32_t)(x * 32.0) << (int32_t)(y * 32.0) << (int32_t)(z * 32.0) << (int8_t) yaw
-                   << (int8_t) pitch;
-      if (type == MOB_SHEEP)
-      {
-        user->buffer << (int8_t) 0 << (int8_t) meta << (int8_t) 127;
-      }
-      else
-      {
-        user->buffer << (int8_t) 127;
-      }
-    }
-    spawned = true;
+    user->buffer << eServerToClientPacket_Destroy_entity << (int32_t) UID;
   }
 }
 
 void Mob::deSpawnToAll()
 {
-  for (size_t i = 0; i < Mineserver::get()->users().size(); i++)
-  {
-    User* user = Mineserver::get()->users()[i];
-    if (user->logged)
-    {
-      user->buffer << PACKET_DESTROY_ENTITY << (int32_t) UID;
-    }
-  }
+  Mineserver::get()->forEachUser(boost::bind(&sendDespawnToAll, UID, _1));
+
   spawned = false;
 }
 
@@ -180,22 +180,24 @@ void Mob::relativeMoveToAll()
 
 }
 
+void Mob::sendTeleportToAll(NonNull<Mob> mob, NonNull<User> user)
+{
+  if (user->logged)
+  {
+    user->buffer << eServerToClientPacket_Entity_teleport << (int32_t) mob->UID
+      << (int32_t)(mob->x * 32.0) << (int32_t)(mob->y * 32.0) << (int32_t)(mob->z * 32.0)
+      << (int8_t) mob->yaw << (int8_t) mob->pitch;
+  }
+}
+
 void Mob::teleportToAll()
 {
   if (!spawned)
   {
     return;
   }
-  for (size_t i = 0; i < Mineserver::get()->users().size(); i++)
-  {
-    User* user = Mineserver::get()->users()[i];
-    if (user->logged)
-    {
-      user->buffer << PACKET_ENTITY_TELEPORT << (int32_t) UID
-                   << (int32_t)(x * 32.0) << (int32_t)(y * 32.0) << (int32_t)(z * 32.0)
-                   << (int8_t) yaw << (int8_t) pitch;
-    }
-  }
+
+  Mineserver::get()->forEachUser(boost::bind(&sendTeleportToAll, NonNull<Mob>(this), _1));
 }
 
 void Mob::moveTo(double to_x, double to_y, double to_z, int to_map)
@@ -239,11 +241,8 @@ void Mob::look(int16_t yaw, int16_t pitch)
   this->pitch = p_byte;
   this->yaw = y_byte;
   Packet pkt;
-  pkt << PACKET_ENTITY_LOOK << (int32_t) UID << (int8_t) y_byte << (int8_t) p_byte;
-  if (User::all().size() > 0)
-  {
-    User::all()[0]->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
-  }
+  pkt << eServerToClientPacket_Entity_look << (int32_t) UID << (int8_t) y_byte << (int8_t) p_byte;
+  User::sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 }
 
 

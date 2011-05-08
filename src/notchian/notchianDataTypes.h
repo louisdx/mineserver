@@ -24,29 +24,39 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef NOTCHIANDATATYPES_H
+#define NOTCHIANDATATYPES_H
 
-#pragma once
+//http://mc.kev009.com/Protocol#Data_Types
 
-#include "basic.h"
-class User;
-
-/** The BlockDefault type comprises of the functionality seen in most of the
-blocktypes in the game. These functions are reused and mixed with multiple
-different blocks. */
-
-class BlockDefault: public BlockBasic
+// generic notchian type
+template<class BaseType>
+class NotchianType
 {
 public:
-  bool affectedBlock(int block);
+	NotchianType();
+	virtual ~NotchianType();
 
-  void onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  bool onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  bool onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onNeighbourMove(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
+	// do not allow implicit conversion to notchian types
+	explicit NotchianType(BaseType val);
+
+	// allow implicit conversion from notchian types
+	operator BaseType();
+
+	NotchianType<BaseType>& operator =(const BaseType& rhs);
+
+private:
+	BaseType mVal;
 };
 
+class Notchian_byte		: public NotchianType<int8_t		> {};
+class Notchian_short	: public NotchianType<int16_t		> {};
+class Notchian_int		: public NotchianType<int32_t		> {};
+class Notchian_long		: public NotchianType<int64_t		> {};
+class Notchian_float	: public NotchianType<float			> {};
+class Notchian_double	: public NotchianType<double		> {};
+class Notchian_string8	: public NotchianType<std::string	> {};
+class Notchian_string16	: public NotchianType<std::wstring	> {};
+
+#include "notchianDataTypes.inl"
+#endif //NOTCHIANDATATYPES_H

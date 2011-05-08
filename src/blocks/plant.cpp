@@ -31,6 +31,7 @@
 #include "../mineserver.h"
 #include "../config.h"
 #include "../map.h"
+#include <boost/shared_ptr.hpp>
 
 
 bool BlockPlant::affectedBlock(int block)
@@ -60,7 +61,7 @@ bool BlockPlant::affectedBlock(int block)
   return false;
 }
 
-std::vector<PlantBlock*> growingPlants;
+std::vector< boost::shared_ptr<PlantBlock> > growingPlants;
 
 BlockPlant::BlockPlant()
 {
@@ -72,46 +73,30 @@ BlockPlant::BlockPlant()
   reed_max = Mineserver::get()->config()->iData("mapgen.reedmax");
 }
 
-void BlockPlant::onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
+void BlockPlant::remBlock(NonNull<PlantBlock> p2)
 {
- 
-}
-
-void BlockPlant::onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockPlant::onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
-}
-
-void BlockPlant::remBlock(PlantBlock* p2)
-{
-  for (std::vector<PlantBlock*>::iterator p = growingPlants.begin();
-       p != growingPlants.end(); p++)
+  for (std::vector< boost::shared_ptr<PlantBlock> >::iterator p = growingPlants.begin();
+    p != growingPlants.end(); p++)
   {
     if ((*p)->x == p2->x && (*p)->y == p2->y && (*p)->z == p2->z && (*p)->map == p2->map)
     {
-      delete(*p);
       growingPlants.erase(p);
       return;
     }
   }
 }
 
-void BlockPlant::addBlock(PlantBlock* p2)
+void BlockPlant::addBlock(std::auto_ptr<PlantBlock> p2)
 {
   for (size_t i = 0; i < growingPlants.size(); i++)
   {
-    PlantBlock* p = growingPlants[i];
+    NonNull<PlantBlock> p(growingPlants[i].get());
     if (p->x == p2->x && p->y == p2->y && p->z == p2->z && p->map == p2->map)
     {
       return;
     }
   }
-  growingPlants.push_back(p2);
+  growingPlants.push_back(boost::shared_ptr<PlantBlock>(p2.release()));
 }
 
 void BlockPlant::remBlock(int x, int y, int z, int map)
@@ -132,7 +117,7 @@ void BlockPlant::addBlock(int x, int y, int z, int map)
   int b = (int) block;
   if (b == BLOCK_GRASS || b == BLOCK_DIRT || b == BLOCK_CROPS || b == BLOCK_REED || b == BLOCK_CACTUS)
   {
-    PlantBlock* p = new PlantBlock;
+    std::auto_ptr<PlantBlock> p( new PlantBlock() );
     p->x = x;
     p->y = y;
     p->z = z;
@@ -169,7 +154,7 @@ void BlockPlant::timer200()
 {
   for (int i = growingPlants.size() - 1; i >= 0; i--)
   {
-    PlantBlock* p = growingPlants[i];
+    NonNull<PlantBlock> p(growingPlants[i].get());
     uint8_t block, meta, sky, light;
     Mineserver::get()->map(p->map)->getBlock(p->x, p->y, p->z, &block, &meta);
     Mineserver::get()->map(p->map)->getLight(p->x, p->y, p->z, &light, &sky);
@@ -332,23 +317,6 @@ bool BlockPlant::onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_
   return false;
 }
 
-void BlockPlant::onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-  //   uint8_t block,meta,up_block,up_meta;
-  //   if (!Mineserver::get()->map(map)->getBlock(x, y, z, &block, &meta))
-  //     return;
-  //   if (!Mineserver::get()->map(map)->getBlock(x, y-1, z,&up_block, &up_meta))
-  //     return;
-  //
-  //   if (direction == BLOCK_TOP && isPlant(up_block))
-  //   {
-  //      // Break plant and spawn plant item
-  //      Mineserver::get()->map(map)->sendBlockChange(x, y, z, BLOCK_AIR, 0);
-  //      Mineserver::get()->map(map)->setBlock(x, y, z, BLOCK_AIR, 0);
-  //      this->spawnBlockItem(x, y, z, map, block);
-  //   }
-}
-
 bool BlockPlant::isPlant(int num)
 {
   return (num == BLOCK_CROPS || num == BLOCK_CACTUS || num == BLOCK_YELLOW_FLOWER || num == BLOCK_RED_ROSE || num == BLOCK_REED || num == BLOCK_SAPLING || num == BLOCK_RED_MUSHROOM || num == BLOCK_BROWN_MUSHROOM);
@@ -411,8 +379,8 @@ bool BlockPlant::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int3
   }
 
   if ((newblock == BLOCK_YELLOW_FLOWER  ||
-       newblock == BLOCK_RED_ROSE) && (oldblock != BLOCK_DIRT &&
-                                       oldblock != BLOCK_GRASS))
+    newblock == BLOCK_RED_ROSE) && (oldblock != BLOCK_DIRT &&
+    oldblock != BLOCK_GRASS))
   {
     revertBlock(user, x, y, z, map);
     return true;
@@ -451,7 +419,7 @@ bool BlockPlant::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int3
   }
 
   if ((newblock == BLOCK_BROWN_MUSHROOM || newblock == BLOCK_RED_MUSHROOM)
-      && oldblock != BLOCK_DIRT)
+    && oldblock != BLOCK_DIRT)
   {
     revertBlock(user, x, y, z, map);
     return true;
@@ -473,9 +441,4 @@ bool BlockPlant::onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int3
 void BlockPlant::onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
 {
   addBlocks(x, y, z, map);
-}
-
-void BlockPlant::onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction)
-{
-
 }

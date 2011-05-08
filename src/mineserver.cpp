@@ -23,7 +23,7 @@
   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 #include <cstdlib>
 
@@ -57,6 +57,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <boost/bind.hpp>
 
 #include "constants.h"
 #include "mineserver.h"
@@ -65,7 +66,6 @@
 #include "tools.h"
 #include "map.h"
 #include "user.h"
-#include "chat.h"
 #include "worldgen/mapgen.h"
 #include "worldgen/nethergen.h"
 #include "worldgen/heavengen.h"
@@ -74,7 +74,7 @@
 #include "config.h"
 #include "config/node.h"
 #include "nbt.h"
-#include "packets.h"
+#include "./packets/packets.h"
 #include "physics.h"
 #include "plugin.h"
 #include "furnaceManager.h"
@@ -204,8 +204,7 @@ int main(int argc, char* argv[])
   }
 
   // load config
-  Config* config = Mineserver::get()->config();
-  if (!config->load(cfg))
+  if (!Mineserver::get()->config()->load(cfg))
   {
     return EXIT_FAILURE;
   }
@@ -221,7 +220,7 @@ int main(int argc, char* argv[])
       override_config << overrides[i] << ';' << std::endl;
     }
     // override config
-    if (!config->load(override_config))
+    if (!Mineserver::get()->config()->load(override_config))
     {
       LOG2(ERROR, "Error when parsing overrides: maybe you forgot to doublequote string values?");
       return EXIT_FAILURE;
@@ -256,16 +255,15 @@ Mineserver::Mineserver()
      m_eventBase     (NULL),
 
      // core modules
-     m_config        (new Config),
-     m_screen        (new CliScreen),
-     m_logger        (new Logger),
+     m_config        (new Config()),
+     m_screen        (new CliScreen()),
 
      m_plugin        (NULL),
-     m_chat          (NULL),
      m_furnaceManager(NULL),
      m_packetHandler (NULL),
      m_inventory     (NULL),
-     m_mobs          (NULL)
+     m_mobs          (NULL),
+     mServerUser(new User(-1, SERVER_CONSOLE_UID))
 {
   memset(&m_listenEvent, 0, sizeof(event));
   initConstants();
@@ -273,11 +271,6 @@ Mineserver::Mineserver()
 
 Mineserver::~Mineserver()
 {
-  freeConstants();
-
-  delete m_logger;
-  delete m_screen;
-  delete m_config;
 }
 
 
@@ -294,7 +287,7 @@ bool Mineserver::init()
   };
   for (size_t i = 0; i < sizeof(vars) / sizeof(vars[0]); i++)
   {
-    ConfigNode* node = config()->mData(vars[i]);
+    boost::shared_ptr<ConfigNode> node = config()->mData(vars[i]);
     if (!node)
     {
       LOG2(ERROR, std::string("Variable is missing: ") + vars[i]);
@@ -342,7 +335,7 @@ bool Mineserver::init()
 
 
   // screen::init() needs m_plugin
-  m_plugin = new Plugin;
+  m_plugin.reset(new Plugin);
 
   init_plugin_api();
 
@@ -355,17 +348,6 @@ bool Mineserver::init()
 
   LOG2(INFO, "Welcome to Mineserver v" + VERSION);
 
-  MapGen* mapgen = new MapGen;
-  MapGen* nethergen = new NetherGen;
-  MapGen* heavengen = new HeavenGen;
-  MapGen* biomegen = new BiomeGen;
-  MapGen* eximgen = new EximGen;
-  m_mapGenNames.push_back(mapgen);
-  m_mapGenNames.push_back(nethergen);
-  m_mapGenNames.push_back(heavengen);
-  m_mapGenNames.push_back(biomegen);
-  m_mapGenNames.push_back(eximgen);
-
   m_saveInterval = m_config->iData("map.save_interval");
 
   m_only_helmets = m_config->bData("system.armour.helmet_strict");
@@ -375,24 +357,57 @@ bool Mineserver::init()
   const char* key = "map.storage.nbt.directories"; // Prefix for worlds config
   if (m_config->has(key) && (m_config->type(key) == CONFIG_NODE_LIST))
   {
-    std::list<std::string> tmp = m_config->mData(key)->keys();
+    std::auto_ptr< std::list<std::string> > tmp(m_config->mData(key)->keys());
+
     int n = 0;
-    for (std::list<std::string>::const_iterator it = tmp.begin(); it != tmp.end(); ++it)
+    for (std::list<std::string>::const_iterator it = tmp->begin(); it != tmp->end(); ++it)
     {
-      m_map.push_back(new Map());
-      Physics* phy = new Physics;
-      phy->map = n;
-      m_physics.push_back(phy);
+      boost::shared_ptr<World> newWorld(new World());
+      newWorld->m_map.reset(new Map());
+      newWorld->m_physics.reset(new Physics);
+      newWorld->m_physics->map = n;
+
       int k = m_config->iData((std::string(key) + ".") + (*it));
-      if ((uint32_t)k >= m_mapGenNames.size())
-      {
-        std::ostringstream s;
-        s << "Error! Mapgen number " << k << " in config. " << m_mapGenNames.size() << " Mapgens known";
-        LOG2(INFO, s.str());
-      }
       // WARNING: if k is too big this will be an access error! -- louisdx
-      MapGen* m = m_mapGenNames[k];
-      m_mapGen.push_back(m);
+      switch(k)
+      {
+      case 0:
+        {
+          newWorld->m_mapGen.reset(new MapGen());
+        }
+        break;
+      case 1:
+        {
+          newWorld->m_mapGen.reset(new NetherGen());
+        }
+        break;
+      case 2:
+        {
+          newWorld->m_mapGen.reset(new HeavenGen());
+        }
+        break;
+      case 3:
+        {
+          newWorld->m_mapGen.reset(new BiomeGen());
+        }
+        break;
+      case 4:
+        {
+          newWorld->m_mapGen.reset(new EximGen());
+        }
+        break;
+      default:
+        {
+          // use biomeGen as default
+          newWorld->m_mapGen.reset(new BiomeGen());
+          std::ostringstream s;
+          s << "Error! Mapgen number " << k << " in config unkown.";
+          LOG2(INFO, s.str());
+        }
+        break;
+      }
+
+      mWorlds.push_back(newWorld);
       n++;
 
     }
@@ -402,17 +417,16 @@ bool Mineserver::init()
     LOG2(WARNING, "Cannot find map.storage.nbt.directories.*");
   }
 
-  if (m_map.size() == 0)
+  if (mWorlds.size() == 0)
   {
     LOG2(ERROR, "No worlds in Config!");
     return false;
   }
 
-  m_chat           = new Chat;
-  m_furnaceManager = new FurnaceManager;
-  m_packetHandler  = new PacketHandler;
-  m_inventory      = new Inventory(m_config->sData("system.path.data") + '/' + "recipes", ".recipe", "ENABLED_RECIPES.cfg");
-  m_mobs           = new Mobs;
+  m_furnaceManager.reset(   new FurnaceManager());
+  m_packetHandler.reset(    new PacketHandler());
+  m_inventory.reset(        new Inventory(m_config->sData("system.path.data") + '/' + "recipes", ".recipe", "ENABLED_RECIPES.cfg"));
+  m_mobs.reset(             new Mobs());
 
   return true;
 }
@@ -423,29 +437,9 @@ bool Mineserver::free()
   LOG2(INFO, "Shutting down...");
 
   // Close the cli session if its in use
-  if (config() && config()->bData("system.interface.use_cli"))
+  if (config()->bData("system.interface.use_cli"))
   {
     screen()->end();
-  }
-
-  // Free memory
-  for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
-  {
-    delete m_map[i];
-    delete m_physics[i];
-    delete m_mapGen[i];
-  }
-
-  delete m_chat;
-  delete m_furnaceManager;
-  delete m_packetHandler;
-  delete m_inventory;
-  delete m_mobs;
-
-  if (m_plugin)
-  {
-    delete m_plugin;
-    m_plugin = NULL;
   }
 
   // Remove the PID file
@@ -464,30 +458,69 @@ event_base* Mineserver::getEventBase()
   return m_eventBase;
 }
 
+void saveAllPlayers(NonNull<User> user)
+{
+  if (user->logged)
+  {
+    user->saveData();
+  }
+}
+
 void Mineserver::saveAll()
 {
-  for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
+  for (int i = 0; i < mWorlds.size(); i++)
   {
-    m_map[i]->saveWholeMap();
+    mWorlds[i]->m_map->saveWholeMap();
   }
-  saveAllPlayers();
+  forEachUser(&saveAllPlayers);
 }
 
-void Mineserver::saveAllPlayers()
+bool shouldRemoveUser(time_t timeNow, NonNull<User const> const user)
 {
-  if (users().empty())
+  if(user->mQueuedForDelete)
   {
-    return;
+    return true;
   }
-  for (int i = int(users().size()) - 1; i >= 0; i--)
+  // No data received in 30s, timeout
+  if (user->logged && (timeNow - user->lastData) > 30)
   {
-    if (users()[i]->logged)
-    {
-      users()[i]->saveData();
-    }
+    LOG2(INFO, "Player " + user->nick + " timed out");
+
+    return true;
+  }
+  else if (!user->logged && (timeNow - user->lastData) > 100)
+  {
+    return true;
+  }
+  return false;
+}
+
+void updateUser(bool damageEnabled, NonNull<User> user)
+{
+  if (damageEnabled)
+  {
+    user->checkEnvironmentDamage();
+  }
+  user->pushMap();
+  user->popMap();
+
+  // Underwater check / drowning
+  // ToDo: this could be done a bit differently? - Fador
+  // -- User::all() == users() - louisdx
+  user->isUnderwater();
+  if (user->pos.y < 0)
+  {
+    user->sethealth(user->health - 5);
   }
 }
 
+void sendServerTimeToUser(int64_t mapTime, NonNull<User> user)
+{
+    // Send server time
+    Packet pkt;
+    pkt << (int8_t)eServerToClientPacket_Time_update << (int64_t)mapTime;
+    user->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
+}
 
 bool Mineserver::run()
 {
@@ -498,8 +531,8 @@ bool Mineserver::run()
   // load plugins
   if (config()->has("system.plugins") && (config()->type("system.plugins") == CONFIG_NODE_LIST))
   {
-    std::list<std::string> tmp = config()->mData("system.plugins")->keys();
-    for (std::list<std::string>::const_iterator it = tmp.begin(); it != tmp.end(); ++it)
+    std::auto_ptr< std::list<std::string> > tmp(config()->mData("system.plugins")->keys());
+    for (std::list<std::string>::const_iterator it = tmp->begin(); it != tmp->end(); ++it)
     {
       std::string path  = config()->sData("system.path.plugins");
       std::string name  = config()->sData("system.plugins." + (*it));
@@ -516,11 +549,11 @@ bool Mineserver::run()
   }
 
   // Initialize map
-  for (int i = 0; i < (int)m_map.size(); i++)
+  for (int i = 0; i < (int)mWorlds.size(); i++)
   {
     physics(i)->enabled = (config()->bData("system.physics.enabled"));
 
-    m_map[i]->init(i);
+    mWorlds[i]->m_map->init(i);
     if (config()->bData("map.generate_spawn.enabled"))
     {
       LOG2(INFO, "Generating spawn area...");
@@ -548,7 +581,7 @@ bool Mineserver::run()
         }
         for (int z = -size; z <= size; z++)
         {
-          m_map[i]->loadMap(x, z);
+          mWorlds[i]->m_map->loadMap(x, z);
         }
 
         if (show_progress)
@@ -677,7 +710,7 @@ bool Mineserver::run()
     }
 
     //Update physics every 200ms
-    for (std::vector<Map*>::size_type i = 0 ; i < m_map.size(); i++)
+    for (std::vector<Map*>::size_type i = 0 ; i < mWorlds.size(); i++)
     {
       physics(i)->update();
     }
@@ -692,27 +725,20 @@ bool Mineserver::run()
       if (m_saveInterval != 0 && timeNow - m_lastSave >= m_saveInterval)
       {
         //Save
-        for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
+        for (std::vector<Map*>::size_type i = 0; i < mWorlds.size(); i++)
         {
-          m_map[i]->saveWholeMap();
+          mWorlds[i]->m_map->saveWholeMap();
         }
 
         m_lastSave = timeNow;
       }
 
-      // If users, ping them
-      if (!User::all().empty())
-      {
-        // Send server time
-        Packet pkt;
-        pkt << (int8_t)PACKET_TIME_UPDATE << (int64_t)m_map[0]->mapTime;
-        User::all()[0]->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
-      }
+      Mineserver::get()->forEachUser(boost::bind(&sendServerTimeToUser,mWorlds[0]->m_map->mapTime,_1));
 
       //Check for tree generation from saplings
-      for (std::vector<Map*>::size_type i = 0; i < m_map.size(); i++)
+      for (std::vector<Map*>::size_type i = 0; i < mWorlds.size(); i++)
       {
-        m_map[i]->checkGenTrees();
+        mWorlds[i]->m_map->checkGenTrees();
       }
 
       // TODO: Run garbage collection for chunk storage dealie?
@@ -726,64 +752,27 @@ bool Mineserver::run()
     {
       tick = (uint32_t)timeNow;
       // Loop users
-      for (int i = int(users().size()) - 1; i >= 0; i--)
+
+      // removed disconnected users
+      forEachUserRemoveIfTrue(boost::bind(&shouldRemoveUser,timeNow,_1));
+
+      for (std::vector<Map*>::size_type i = 0 ; i < mWorlds.size(); i++)
       {
-        // No data received in 30s, timeout
-        if (users()[i]->logged && (timeNow - users()[i]->lastData) > 30)
+        mWorlds[i]->m_map->mapTime += 20;
+        if (mWorlds[i]->m_map->mapTime >= 24000)
         {
-          LOG2(INFO, "Player " + users()[i]->nick + " timed out");
-
-          delete users()[i];
-        }
-        else if (!users()[i]->logged && (timeNow - users()[i]->lastData) > 100)
-        {
-          delete users()[i];
-        }
-        else
-        {
-          if (m_damage_enabled)
-          {
-            users()[i]->checkEnvironmentDamage();
-          }
-          users()[i]->pushMap();
-          users()[i]->popMap();
-        }
-
-      }
-
-      for (std::vector<Map*>::size_type i = 0 ; i < m_map.size(); i++)
-      {
-        m_map[i]->mapTime += 20;
-        if (m_map[i]->mapTime >= 24000)
-        {
-          m_map[i]->mapTime = 0;
+          mWorlds[i]->m_map->mapTime = 0;
         }
       }
 
-
-      for (int i = int(users().size()) - 1; i >= 0; i--)
-      {
-        users()[i]->pushMap();
-        users()[i]->popMap();
-      }
+      // allowed to modify users, but not delete them!
+      forEachUser(boost::bind(&updateUser,m_damage_enabled,_1));
 
       // Check for Furnace activity
       furnaceManager()->update();
 
       // Run 1s timer hook
       static_cast<Hook0<bool>*>(plugin()->getHook("Timer1000"))->doAll();
-    }
-
-    // Underwater check / drowning
-    // ToDo: this could be done a bit differently? - Fador
-    // -- User::all() == users() - louisdx
-    for (size_t i = 0; i < users().size(); ++i)
-    {
-      users()[i]->isUnderwater();
-      if (users()[i]->pos.y < 0)
-      {
-        users()[i]->sethealth(users()[i]->health - 5);
-      }
     }
   }
 
@@ -870,12 +859,104 @@ bool Mineserver::homePrepare(const std::string& path)
   return true;
 }
 
-Map* Mineserver::map(size_t n) const
+Mineserver* Mineserver::get()
 {
-  if (n < m_map.size())
+  static Mineserver* m_instance = NULL;
+
+  if (!m_instance)
   {
-    return m_map[n];
+    m_instance = new Mineserver;
   }
-  LOG2(WARNING, "Nonexistent map requested. Map 0 passed");
-  return m_map[0];
+
+  return m_instance;
+}
+
+uint32_t Mineserver::generateEID()
+{
+  static uint32_t m_EID = 0;
+  return ++m_EID;
+}
+
+void voidSharedToNonNull(boost::function<void(NonNull<User>)> func, boost::shared_ptr<User> user)
+{
+  NonNull<User> nonNull(user.get());
+  func(nonNull);
+}
+
+void Mineserver::forEachUser(boost::function<void(NonNull<User>)> func)
+{
+  std::for_each(m_users.begin(),m_users.end(),boost::bind(&voidSharedToNonNull,func,_1));
+}
+
+bool boolSharedToNonNull(boost::function<bool(NonNull<User const> const)> func, boost::shared_ptr<User> user)
+{
+  return func(NonNull<User const>(user.get()));
+}
+
+void Mineserver::forEachUserRemoveIfTrue(boost::function<bool(NonNull<User const> const)> func)
+{
+  std::vector< boost::shared_ptr<User> >::iterator new_end = std::remove_if(m_users.begin(),m_users.end(),boost::bind(&boolSharedToNonNull,func,_1));
+
+  for(std::vector< boost::shared_ptr<User> >::iterator itr = new_end;
+    itr != m_users.end();
+    ++itr)
+  {
+    (*itr)->destructorActions();
+  }
+  m_users.erase(new_end, m_users.end());
+}
+
+Ptr<User> Mineserver::userFromName(std::string user, bool caseSensative)
+{
+  std::string nick = caseSensative ? user : strToLower(user);
+  for (unsigned int i = 0; i < m_users.size(); i++)
+  {
+    if (m_users[i]->fd && m_users[i]->logged)
+    {
+      std::string currentNick = caseSensative ? m_users[i]->nick : strToLower(m_users[i]->nick);
+      // Don't send to his user if he is DND and the message is a chat message
+      if (nick == currentNick)
+      {
+        return Ptr<User>(m_users[i].get());
+      }
+    }
+  }
+  return Ptr<User>();
+}
+
+NonNull<User> Mineserver::createUser(int sock)
+{
+  boost::shared_ptr<User> newUser(new User(sock,Mineserver::generateEID()));
+  m_users.push_back(newUser);
+
+  return NonNull<User>(newUser.get());
+}
+
+Ptr<User> Mineserver::userFromEID(unsigned int EID)
+{
+  for (unsigned int i = 0; i < m_users.size(); i++)
+  {
+    if (m_users[i]->fd && m_users[i]->logged)
+    {
+      if (EID == m_users[i]->UID)
+      {
+        return Ptr<User>(m_users[i].get());
+      }
+    }
+  }
+  return Ptr<User>();
+}
+
+// returns the first user where condition returns true
+Ptr<User> Mineserver::findUser(boost::function<bool(NonNull<User>)> condition)
+{
+  for (unsigned int i = 0; i < m_users.size(); i++)
+  {
+    NonNull<User> currentUser(m_users[i].get());
+    if (condition(currentUser))
+    {
+      return currentUser.get();
+    }
+  }
+  return Ptr<User>();
 }

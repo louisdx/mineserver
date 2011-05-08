@@ -38,7 +38,7 @@
 #include "logger.h"
 
 #include "plugin.h"
-#include "blocks/default.h"
+//#include "blocks/default.h"
 #include "blocks/falling.h"
 #include "blocks/torch.h"
 #include "blocks/plant.h"
@@ -170,7 +170,7 @@ void Plugin::init()
   m_block_CBs.push_back(woolblock);
   Blockjackolantern* jackolanternblock = new Blockjackolantern();
   m_block_CBs.push_back(jackolanternblock);
-  BlockDefault* defaultblock = new BlockDefault();
+  BlockBasic* defaultblock = new BlockBasic();
   m_block_CBs.push_back(defaultblock);
 
 

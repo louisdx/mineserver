@@ -41,23 +41,24 @@ ConfigNode::ConfigNode()
 {
 }
 
-std::list<std::string> ConfigNode::keys(int type) const
+std::auto_ptr< std::list<std::string> > ConfigNode::keys(int type) const
 {
-  std::list<std::string> keys;
+  std::auto_ptr< std::list<std::string> > keys( new std::list<std::string> );
 
   for (Map::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
   {
     if (type == CONFIG_NODE_UNDEFINED || it->second->type() == type)
     {
-      keys.push_back(it->first);
+      keys->push_back(it->first);
     }
 
     if (it->second->type() == CONFIG_NODE_LIST)
     {
-      std::list<std::string> tmp_list = it->second->keys(type);
-      for (std::list<std::string>::const_iterator tmp_iter = tmp_list.begin(); tmp_iter != tmp_list.end(); ++tmp_iter)
+      std::auto_ptr< std::list<std::string> > tmp_list(it->second->keys(type));
+
+      for (std::list<std::string>::const_iterator tmp_iter = tmp_list->begin(); tmp_iter != tmp_list->end(); ++tmp_iter)
       {
-        keys.push_back(it->first + "." + *tmp_iter);
+        keys->push_back(it->first + "." + *tmp_iter);
       }
     }
   }
@@ -114,7 +115,7 @@ ConfigNode::Ptr ConfigNode::get(const std::string& key, bool createMissing)
     }
     else
     {
-      return m_list.insert(Map::value_type(keyA, std::tr1::shared_ptr<ConfigNode>(new ConfigNode))).first->second->get(keyB, createMissing);
+      return m_list.insert(Map::value_type(keyA, boost::shared_ptr<ConfigNode>(new ConfigNode))).first->second->get(keyB, createMissing);
     }
   }
   else
@@ -207,6 +208,7 @@ void ConfigNode::dump(int indent) const
   case CONFIG_NODE_LIST:
   {
     std::cout << "list:\n";
+
 
     for (Map::const_iterator it = m_list.begin(); it != m_list.end(); ++it)
     {

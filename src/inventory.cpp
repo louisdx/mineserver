@@ -62,14 +62,14 @@ void Item::sendUpdate()
     if (slot == player->curItem + 36)
     {
       Packet pkt;
-      pkt << (int8_t)PACKET_ENTITY_EQUIPMENT << (int32_t)player->UID
+      pkt << (int8_t)eClientToServerPacket_Entity_equipment << (int32_t)player->UID
           << (int16_t)0 << (int16_t)type << (int16_t) health;
       player->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
     }
     if (slot >= 5 && slot <= 8)
     {
       Packet pkt;
-      pkt << (int8_t)PACKET_ENTITY_EQUIPMENT << (int32_t)player->UID
+      pkt << (int8_t)eClientToServerPacket_Entity_equipment << (int32_t)player->UID
           << (int16_t)(5 - (slot - 4)) << (int16_t)type << (int16_t) 0;
       player->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
     }
@@ -80,7 +80,7 @@ void Item::sendUpdate()
       window = -1;
       t_slot = 0;
     }
-    player->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)window
+    player->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)window
                    << (int16_t)t_slot << (int16_t) type;
     if (type != -1)
     {
@@ -244,9 +244,9 @@ Inventory::Inventory(const std::string& path, const std::string& suffix, const s
   }
 }
 
-bool Inventory::addRecipe(int width, int height, std::vector<Item*> inputrecipe, int outputCount, int16_t outputType, int16_t outputHealth)
+bool Inventory::addRecipe(int width, int height, std::vector< boost::shared_ptr<Item> > inputrecipe, int outputCount, int16_t outputType, int16_t outputHealth)
 {
-  Recipe* recipe = new Recipe;
+  boost::shared_ptr<Recipe> recipe(new Recipe());
 
   recipe->width  = width;
   recipe->height = height;
@@ -282,7 +282,7 @@ bool Inventory::readRecipe(std::string recipeFile)
   int del;
   bool readingRecipe = false;
   std::vector<std::string> line;
-  std::vector<Item*> recipetable;
+  std::vector< boost::shared_ptr<Item> > recipetable;
   std::string text;
   while (getline(ifs, temp))
   {
@@ -343,7 +343,7 @@ bool Inventory::readRecipe(std::string recipeFile)
       for (unsigned int i = 0; i < line.size(); i++)
       {
         std::string data(line[i]);
-        Item* item = new Item();
+        boost::shared_ptr<Item> item(new Item());
         item->setCount(1);
         item->setHealth(-1);
         int location = data.find("x");
@@ -473,7 +473,7 @@ bool Inventory::canBeArmour(int slot, int type)
 bool Inventory::windowClick(User* user, int8_t windowID, int16_t slot, int8_t rightClick, int16_t actionNumber, int16_t itemID, int8_t itemCount, int16_t itemUses)
 {
   //Ack
-  user->buffer << (int8_t)PACKET_TRANSACTION << (int8_t)windowID << (int16_t)actionNumber << (int8_t)1;
+  user->buffer << (int8_t)eServerToClientPacket_Transaction << (int8_t)windowID << (int16_t)actionNumber << (int8_t)1;
 
   //Mineserver::get()->logger()->log(1,"window: " + dtos(windowID) + " slot: " + dtos(slot) + " (" + dtos(actionNumber) + ") itemID: " + dtos(itemID));
   //Click outside the window
@@ -932,9 +932,9 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
   switch (type)
   {
   case WINDOW_CHEST:
-    user->buffer << (int8_t)PACKET_OPEN_WINDOW << (int8_t)WINDOW_CHEST  << (int8_t)INVENTORYTYPE_CHEST;
-	user->buffer.writeString(std::string("Chest"));
-	user->buffer << (int8_t)27;
+    user->buffer << (int8_t)eServerToClientPacket_Open_window << (int8_t)WINDOW_CHEST  << (int8_t)INVENTORYTYPE_CHEST;
+    user->buffer.writeString(std::string("Chest"));
+    user->buffer << (int8_t)27;
 
     for (uint32_t i = 0; i < chunk->chests.size(); i++)
     {
@@ -944,7 +944,7 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
         {
           if (chunk->chests[i]->items[j].getType() != -1)
           {
-            user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_CHEST << (int16_t)j << (int16_t)chunk->chests[i]->items[j].getType()
+            user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_CHEST << (int16_t)j << (int16_t)chunk->chests[i]->items[j].getType()
                          << (int8_t)(chunk->chests[i]->items[j].getCount()) << (int16_t)chunk->chests[i]->items[j].getHealth();
           }
         }
@@ -953,9 +953,9 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
     }
     break;
   case WINDOW_WORKBENCH:
-	  user->buffer << (int8_t)PACKET_OPEN_WINDOW << (int8_t)WINDOW_WORKBENCH  << (int8_t)INVENTORYTYPE_WORKBENCH;
-	  user->buffer.writeString(std::string("Workbench"));
-	  user->buffer  << (int8_t)0;
+    user->buffer << (int8_t)eServerToClientPacket_Open_window << (int8_t)WINDOW_WORKBENCH  << (int8_t)INVENTORYTYPE_WORKBENCH;
+    user->buffer.writeString(std::string("Workbench"));
+    user->buffer  << (int8_t)0;
 
     for (uint32_t i = 0; i < openWorkbenches.size(); i++)
     {
@@ -967,7 +967,7 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
         {
           if (openWorkbenches[i]->workbench[j].getType() != -1)
           {
-            user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_WORKBENCH << (int16_t)j << (int16_t)openWorkbenches[i]->workbench[j].getType()
+            user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_WORKBENCH << (int16_t)j << (int16_t)openWorkbenches[i]->workbench[j].getType()
                          << (int8_t)(openWorkbenches[i]->workbench[j].getCount()) << (int16_t)openWorkbenches[i]->workbench[j].getHealth();
           }
         }
@@ -977,9 +977,9 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
     break;
   case WINDOW_FURNACE:
 
-    user->buffer << (int8_t)PACKET_OPEN_WINDOW << (int8_t)WINDOW_FURNACE  << (int8_t)INVENTORYTYPE_FURNACE;
-	user->buffer.writeString(std::string("Furnace"));
-	user->buffer << (int8_t)0;
+    user->buffer << (int8_t)eServerToClientPacket_Open_window << (int8_t)WINDOW_FURNACE  << (int8_t)INVENTORYTYPE_FURNACE;
+    user->buffer.writeString(std::string("Furnace"));
+    user->buffer << (int8_t)0;
 
     for (uint32_t i = 0; i < chunk->furnaces.size(); i++)
     {
@@ -989,12 +989,12 @@ bool Inventory::windowOpen(User* user, int8_t type, int32_t x, int32_t y, int32_
         {
           if (chunk->furnaces[i]->items[j].getType() != -1)
           {
-            user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)chunk->furnaces[i]->items[j].getType()
+            user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)WINDOW_FURNACE << (int16_t)j << (int16_t)chunk->furnaces[i]->items[j].getType()
                          << (int8_t)(chunk->furnaces[i]->items[j].getCount()) << (int16_t)chunk->furnaces[i]->items[j].getHealth();
           }
         }
-        user->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)0 << (int16_t)(chunk->furnaces[i]->cookTime * 18);
-        user->buffer << (int8_t)PACKET_PROGRESS_BAR << (int8_t)WINDOW_FURNACE << (int16_t)1 << (int16_t)(chunk->furnaces[i]->burnTime * 3);
+        user->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)0 << (int16_t)(chunk->furnaces[i]->cookTime * 18);
+        user->buffer << (int8_t)eServerToClientPacket_Progress_bar << (int8_t)WINDOW_FURNACE << (int16_t)1 << (int16_t)(chunk->furnaces[i]->burnTime * 3);
         break;
       }
     }
@@ -1302,7 +1302,7 @@ bool Inventory::doCraft(Item* slots, int8_t width, int8_t height)
 bool Inventory::setSlot(User* user, int8_t windowID, int16_t slot, int16_t itemID, int8_t count, int16_t health)
 {
   //Mineserver::get()->logger()->log(1,"Setslot: " + dtos(slot) + " to " + dtos(itemID) + " (" + dtos(count) + ") health: " + dtos(health));
-  user->buffer << (int8_t)PACKET_SET_SLOT << (int8_t)windowID << (int16_t)slot   << (int16_t)itemID;
+  user->buffer << (int8_t)eClientToServerPacket_Set_slot << (int8_t)windowID << (int16_t)slot   << (int16_t)itemID;
   if (itemID != -1)
   {
     user->buffer << (int8_t)count << (int16_t)health;

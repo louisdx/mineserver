@@ -30,13 +30,33 @@
 
 #include <string>
 #include <stdint.h>
-#include <tr1/memory>
+
+#include "../util/NonNull.h"
+
+#include <boost/shared_ptr.hpp>
 
 enum
 {
   MAX_FILESIZE = 1*1024*1024,   //!< maximum allowed file size
   MAX_INCLUDES = 16             //!< maximum allowed number of inclusions
 };
+
+
+#define CONFIG_TOKEN_ENTITY 1
+#define CONFIG_TOKEN_LABEL 2
+#define CONFIG_TOKEN_NUMBER 3
+#define CONFIG_TOKEN_STRING 4
+#define CONFIG_TOKEN_BOOLEAN 5
+
+#define CONFIG_TOKEN_LIST_OPEN 10
+#define CONFIG_TOKEN_LIST_CLOSE 11
+#define CONFIG_TOKEN_LIST_DELIMITER 12
+#define CONFIG_TOKEN_LIST_LABEL 13
+
+#define CONFIG_TOKEN_OPERATOR_ASSIGN 20
+#define CONFIG_TOKEN_OPERATOR_APPEND 21
+
+#define CONFIG_TOKEN_TERMINATOR 30
 
 class ConfigNode;
 
@@ -46,8 +66,8 @@ public:
   ConfigParser();
 
 public:
-  bool parse(const std::string& file, std::tr1::shared_ptr<ConfigNode> ptr);
-  bool parse(const std::istream& data, std::tr1::shared_ptr<ConfigNode> ptr);
+  bool parse(const std::string& file, boost::shared_ptr<ConfigNode> ptr);
+  bool parse(const std::istream& data, boost::shared_ptr<ConfigNode> ptr);
 
 private:
   uint32_t m_includes;

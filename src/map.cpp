@@ -61,6 +61,8 @@
 #include "furnaceManager.h"
 #include "mcregion.h"
 
+using std::max;
+
 // Copy Construtor
 Map::Map(const Map& oldmap)
   :
@@ -75,8 +77,8 @@ Map::Map(const Map& oldmap)
 }
 
 Map::Map()
-  :
-  chunks(441) // buckets!
+:
+chunks(441) // buckets!
 {
   std::fill(emitLight, emitLight + 256, 0);
 
@@ -131,9 +133,10 @@ Map::~Map()
   // louisdx: This destructor is doing WAY too much. All this should be in a separate function.
   // A destructor must never throw, and this destructor does tons of non-exception-safe stuff.
 
-  for (ChunkMap::const_iterator it = chunks.begin(); it != chunks.end(); )
+  // Free chunk memory
+  for (ChunkMap::const_iterator it = chunks.begin(); it != chunks.end(); ++it)
   {
-    releaseMap((it++)->first);
+    releaseMap(it->first);
   }
 
   // Free item memory
@@ -145,8 +148,8 @@ Map::~Map()
   items.clear();
   std::string infile = mapDirectory + "/level.dat";
 
-  NBT_Value* root = NBT_Value::LoadFromFile(infile);
-  if (root != NULL)
+  std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
+  if (root.get() != NULL)
   {
     NBT_Value& data = *((*root)["Data"]);
 
@@ -175,8 +178,6 @@ Map::~Map()
     }
 
     root->SaveToFile(infile);
-
-    delete root;
   }
 }
 
@@ -238,11 +239,11 @@ void Map::init(int number)
 {
   m_number = number;
   const char* key = "map.storage.nbt.directories"; // Prefix for worlds config
-  std::list<std::string> tmp = Mineserver::get()->config()->mData(key)->keys();
+  std::auto_ptr< std::list<std::string> > tmp(Mineserver::get()->config()->mData(key)->keys());
 
-  if (number < int(tmp.size()))
+  if (number < int(tmp->size()))
   {
-    std::list<std::string>::const_iterator it = tmp.begin();
+    std::list<std::string>::const_iterator it = tmp->begin();
     std::advance(it, number);
     mapDirectory = *it;
   }
@@ -299,7 +300,7 @@ void Map::init(int number)
     }
   }
 
-  NBT_Value* root = NBT_Value::LoadFromFile(infile);
+  std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
   NBT_Value& data = *((*root)["Data"]);
 
   spawnPos.x() = (int32_t) * data["SpawnX"];
@@ -364,8 +365,6 @@ void Map::init(int number)
 
   // Init mapgenerator
   Mineserver::get()->mapGen(m_number)->re_init((int32_t)mapSeed);
-
-  delete root;
 }
 
 sChunk* Map::getMapData(int x, int z,  bool generate)
@@ -379,6 +378,7 @@ sChunk* Map::getMapData(int x, int z,  bool generate)
 
 bool Map::saveWholeMap()
 {
+  //Loop every chunk loaded
   for (ChunkMap::const_iterator it = chunks.begin(); it != chunks.end(); ++it)
   {
     saveMap(it->first);
@@ -389,8 +389,8 @@ bool Map::saveWholeMap()
 
   std::string infile = mapDirectory + "/level.dat";
 
-  NBT_Value* root = NBT_Value::LoadFromFile(infile);
-  if (root != NULL)
+  std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
+  if (root.get() != NULL)
   {
     NBT_Value& data = *((*root)["Data"]);
 
@@ -421,8 +421,6 @@ bool Map::saveWholeMap()
       }
     }
     root->SaveToFile(infile);
-
-    delete root;
   }
 
   return true;
@@ -641,18 +639,20 @@ void Map::spreadLight(int x, int y, int z, int light_value, uint8_t type /* 0: s
 
       getLight(x_toset, y_toset, z_toset, &skylightCurrent, &blocklightCurrent, chunk);
 
-      const int lightNew = std::max(0, light_value - int(stopLight[block]) - 1);
+      const int lightNew = max(0, light_value - int(stopLight[block]) - 1);
 
       if (lightNew > (type == 0 ? skylightCurrent : blocklightCurrent))
       {
         if      (type == 0) setLight(x_toset, y_toset, z_toset, lightNew, 0, 1, chunk);
         else if (type == 1) setLight(x_toset, y_toset, z_toset, 0, lightNew, 2, chunk);
-        spreadLight(x_toset, y_toset, z_toset, lightNew, type);
+        // this line is causing instability!
+        //spreadLight(x_toset, y_toset, z_toset, lightNew, type);
       }
     }
     else
     {
-      LOGLF("Loading chunk failed (spreadLight)");
+      // this line is causing instability!
+      //LOGLF("Loading chunk failed (spreadLight)");
       return;
     }
   }
@@ -928,7 +928,7 @@ bool Map::sendBlockChange(int x, int y, int z, char type, char meta)
 
   Packet pkt;
 
-  pkt << PACKET_BLOCK_CHANGE << (int32_t)x << (int8_t)y << (int32_t)z << (int8_t)type << (int8_t)meta;
+  pkt << eServerToClientPacket_Block_change << (int32_t)x << (int8_t)y << (int32_t)z << (int8_t)type << (int8_t)meta;
 
   it->second->sendPacket(pkt);
 
@@ -945,9 +945,7 @@ bool Map::sendNote(int x, int y, int z, char instrument, char pitch)
   }
 
   Packet pkt;
-
-  pkt << PACKET_PLAY_NOTE << (int32_t)x << (int16_t)y << (int32_t)z << (int8_t)instrument << (int8_t)pitch;
-
+  pkt << eServerToClientPacket_Play_note << (int32_t)x << (int16_t)y << (int32_t)z << (int8_t)instrument << (int8_t)pitch;
   it->second->sendPacket(pkt);
 
   return true;
@@ -975,7 +973,7 @@ bool Map::sendPickupSpawn(spawnedItem item)
 
   Packet pkt;
 
-  pkt << PACKET_PICKUP_SPAWN << (int32_t)item.EID << (int16_t)item.item << (int8_t)item.count << (int16_t)item.health
+  pkt << eServerToClientPacket_Pickup_spawn << (int32_t)item.EID << (int16_t)item.item << (int8_t)item.count << (int16_t)item.health
       << (int32_t)item.pos.x() << (int32_t)item.pos.y() << (int32_t)item.pos.z()
       << (int8_t)0 << (int8_t)0 << (int8_t)0;
 
@@ -984,7 +982,7 @@ bool Map::sendPickupSpawn(spawnedItem item)
   return true;
 }
 
-void Map::createPickupSpawn(int x, int y, int z, int type, int count, int health, User* user)
+void Map::createPickupSpawn(int x, int y, int z, int type, int count, int health, Ptr<User> user)
 {
   spawnedItem item;
   item.EID      = Mineserver::generateEID();
@@ -1043,9 +1041,9 @@ bool Map::sendProjectileSpawn(User* user, int8_t projID)
               -(user->pos.pitch / 90.f) * 32768.f,
               cosf(-(user->pos.yaw / 360.f) * 2.f * M_PI) * tempMult * 32768.f
             );
-  pkt << (int8_t)PACKET_ENTITY << (int32_t)EID
-      << (int8_t)PACKET_ADD_OBJECT << (int32_t)EID << (int8_t)projID << (int32_t)pos.x() << (int32_t)pos.y() << (int32_t)pos.z()
-      << (int8_t)PACKET_ENTITY_VELOCITY << (int32_t)EID << (int16_t)vel.x() << (int16_t)vel.y() << (int16_t)vel.z();
+  pkt << (int8_t)eServerToClientPacket_Entity << (int32_t)EID
+      << (int8_t)eServerToClientPacket_Add_object << (int32_t)EID << (int8_t)projID << (int32_t)pos.x() << (int32_t)pos.y() << (int32_t)pos.z()
+      << (int8_t)eServerToClientPacket_Entity_velocity << (int32_t)EID << (int16_t)vel.x() << (int16_t)vel.y() << (int16_t)vel.z();
 
   user->sendAll((uint8_t*)pkt.getWrite(), pkt.getWriteLen());
 
@@ -1106,8 +1104,8 @@ sChunk* Map::loadMap(int x, int z, bool generate)
             //Store new spawn position to level.dat
             spawnPos.y() = new_y + 1;
             std::string infile = mapDirectory + "/level.dat";
-            NBT_Value* root = NBT_Value::LoadFromFile(infile);
-            if (root != NULL)
+            std::auto_ptr<NBT_Value> root = NBT_Value::LoadFromFile(infile);
+            if (root.get() != NULL)
             {
               NBT_Value& data = *((*root)["Data"]);
               *data["SpawnX"] = (int32_t)spawnPos.x();
@@ -1115,8 +1113,6 @@ sChunk* Map::loadMap(int x, int z, bool generate)
               *data["SpawnZ"] = (int32_t)spawnPos.z();
 
               root->SaveToFile(infile);
-
-              delete root;
             }
           }
         }
@@ -1544,7 +1540,7 @@ bool Map::releaseMap(int x, int z)
   return true;
 }
 
-bool Map::sendMultiBlocks(std::vector<vec> & blocks)
+bool Map::sendMultiBlocks(std::vector<vec> &blocks)
 {
   while (blocks.size() > 0)
   {
@@ -1571,7 +1567,7 @@ bool Map::sendMultiBlocks(std::vector<vec> & blocks)
     }
     Packet packet, pC, pT, pM;
     int offsetx = chunk_x << 4, offsetz = chunk_z << 4;
-    packet << (int8_t) PACKET_MULTI_BLOCK_CHANGE << (int32_t) chunk_x << (int32_t) chunk_z << (int16_t) toRem.size();
+    packet << (int8_t) eServerToClientPacket_Multi_block_change << (int32_t) chunk_x << (int32_t) chunk_z << (int16_t) toRem.size();
     for (size_t i = 0; i < toRem.size(); i++)
     {
       uint8_t block, meta;
@@ -1643,7 +1639,7 @@ void Map::sendToUser(User* user, int x, int z, bool login)
 
 
   // Chunk
-  (*p) << (int8_t)PACKET_MAP_CHUNK << (int32_t)(mapposx * 16) << (int16_t)0 << (int32_t)(mapposz * 16)
+  (*p) << (int8_t)eServerToClientPacket_Map_chunk << (int32_t)(mapposx * 16) << (int16_t)0 << (int32_t)(mapposz * 16)
        << (int8_t)15 << (int8_t)127 << (int8_t)15;
 
   memcpy(&mapdata[0], chunk->blocks, 32768);
@@ -1663,7 +1659,7 @@ void Map::sendToUser(User* user, int x, int z, bool login)
   //Push sign data to player
   for (uint32_t i = 0; i < chunk->signs.size(); i++)
   {
-    (*p) << (int8_t)PACKET_SIGN << chunk->signs[i]->x << (int16_t)chunk->signs[i]->y << chunk->signs[i]->z;
+    (*p) << (int8_t)eClientToServerPacket_Sign << chunk->signs[i]->x << (int16_t)chunk->signs[i]->y << chunk->signs[i]->z;
     (*p) << chunk->signs[i]->text1 << chunk->signs[i]->text2 << chunk->signs[i]->text3 << chunk->signs[i]->text4;
   }
 

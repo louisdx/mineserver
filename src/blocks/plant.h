@@ -27,6 +27,7 @@
 
 #pragma once
 #include "basic.h"
+#include "../util/NonNull.h"
 
 // 10000 == 100%
 enum { SEEDS_CHANCE = 1000 };
@@ -45,6 +46,12 @@ public:
 class BlockPlant: public BlockBasic
 {
 public:
+  BlockPlant();
+  bool onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
+  bool onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
+  void onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
+  void timer200();
+private:
   int grass_timeout;
   int crop_timeout;
   int cactus_timeout;
@@ -52,20 +59,10 @@ public:
   int cactus_max;
   int reed_max;
   bool affectedBlock(int block);
-  BlockPlant();
-  void onStartedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onStoppedDigging(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  bool onBroken(User* user, int8_t status, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onNeighbourBroken(User* user, int16_t oldblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  bool onPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onNeighbourPlace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void onReplace(User* user, int16_t newblock, int32_t x, int8_t y, int32_t z, int map, int8_t direction);
-  void timer200();
   void addBlocks(int x, int y, int z, int map);
-  void addBlock(PlantBlock* p2);
+  void addBlock(std::auto_ptr<PlantBlock> p2);
   void addBlock(int x, int y, int z, int map);
-  void remBlock(PlantBlock* p2);
+  void remBlock(NonNull<PlantBlock> p2);
   void remBlock(int x, int y, int z, int map);
   bool isPlant(int num);
 };

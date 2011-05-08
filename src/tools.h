@@ -85,29 +85,29 @@ inline std::wstring hsttonst(std::wstring v)
 // net wstring to host wstring
 inline std::wstring nsttohst(std::wstring v)
 {
-	std::wstring outBuffer = L"";
-	for(uint32_t strItr=0;strItr<v.length();strItr++)
-	{
-		outBuffer+=(wchar_t)ntohs(v[strItr]);
-	}
+  std::wstring outBuffer = L"";
+  for(uint32_t strItr=0;strItr<v.length();strItr++)
+  {
+    outBuffer+=(wchar_t)ntohs(v[strItr]);
+  }
 
-	return outBuffer;
+  return outBuffer;
 }
 
 // std::wstring -> std::string
 inline std::string wstos(const std::wstring &in)
 {
-	std::string out;
-	out.assign(in.begin(), in.end());
-	return out;
+  std::string out;
+  out.assign(in.begin(), in.end());
+  return out;
 }
 
 // std::string -> std::wstring
 inline std::wstring stows(const std::string &in)
 {
-	std::wstring out;
-	out.assign(in.begin(), in.end());
-	return out;
+  std::wstring out;
+  out.assign(in.begin(), in.end());
+  return out;
 }
 
 //Converts block-coordinates to chunk coordinate
