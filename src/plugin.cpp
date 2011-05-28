@@ -63,6 +63,7 @@
 #include "blocks/bed.h"
 #include "blocks/wool.h"
 #include "blocks/jackolantern.h"
+#include "blocks/tnt.h"
 
 #include "items/food.h"
 #include "items/projectile.h"
@@ -120,6 +121,7 @@ Plugin::~Plugin()
 void Plugin::init()
 {
   // Create Block objects
+  m_block_CBs.push_back(BlockBasicPtr(new BlockTNT));
   m_block_CBs.push_back(BlockBasicPtr(new BlockRedstone));
   m_block_CBs.push_back(BlockBasicPtr(new BlockWood));
   m_block_CBs.push_back(BlockBasicPtr(new BlockFalling));
