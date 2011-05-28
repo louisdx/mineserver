@@ -54,3 +54,4 @@ _ReSharper*/
 # *nix build output
 *.[oa]
 *.so
+/nbproject/private/
