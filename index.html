@@ -9,9 +9,9 @@
       body { margin: 3em auto; max-width: 66em; padding: 0; line-height: 1.5em; }
       h2 { font-size: 1.25em; font-weight: bold; line-height: 1.25em; margin: 1em 0 .5em 0; padding: 0; }
       h1 { font-size: 2em; font-weight: bold; line-height: 1.25em; }
-      a:link, a:visited { color: maroon; text-decoration: none; border-bottom: 1px solid #DAA; }
+      a:link, a:visited { color: maroon; text-decoration: none; border-bottom: 1px dotted #DAA; }
       a:link:hover, a:visited:hover { color: white; border: none; background-color: maroon; }
-      code { margin: auto .5ex; background-color: #EEE; }
+      code { font-family: Consolas, "DejaVu Mono Sans", Courier, monospace; }
       p.footnote { font-size: .8em; line-height: 1em; }
       span.subtitle { font-size: .75em; font-weight: normal; font-style: italic; }
       div.listing { font-family: monospace; padding: 0 2em; white-space: pre; }
@@ -26,9 +26,62 @@
     <p><strong>Download:</strong> <a href="http://github.com/louisdx/mineserver/zipball/master">zip ball</a>,
     <a href="http://github.com/louisdx/mineserver/tarball/master">tar.gz ball</a>.</p>
 
-    <p><strong>Check out:</strong> <code>git clone git://github.com/louisdx/mineserver</code></p>
+    <p><strong style="margin-right: 1em;">Check out:</strong> <code>git clone git://github.com/louisdx/mineserver</code></p>
 
     <p><a href="http://mineserver.be/">Main website</a> and <a href="http://mineserver.be/wiki/Main_Page">Wiki</a>. Join the developer discussion on IRC channel <strong>#mineserver</strong>.</p>
+
+    <h2>Installation Example: Linux</h2>
+
+    <p>The configuration of <em>mineserver</em> might require some explanation,
+    so let us walk through a typical build process on a Linux system.</p>
+
+    <p>First, we download the source by cloning the repository. Suppose we want to store
+    the source code in <code>/data/projects/</code>, and we will build the binaries in the
+    separate directory <code>/tmp/msbuild</code> (that way we never pollute the source directory).</p>
+
+    <div class="listing"># get the source code
+cd /data/projects
+git clone git://github.com/louisdx/mineserver
+
+# set up the build directory
+cd /tmp
+mkdir msbuild
+cd msbuild
+
+# run cmake to create the Makefile
+cmake /data/projects/mineserver
+
+# build
+make</div>
+
+    <p>The binary should now reside in <code>./bin/mineserver</code>. The cmake process also
+    copied the file <code>config.cfg</code> into the <code>./bin/</code> directory. If you like,
+    you can edit that file now and keep all your configuration data and the world file in that
+    location. Alternatively, and especially if you want to run several different builds of
+     <em>mineserver</em> with the same configuration, you should keep all your configuration
+    and map files in the same, central location, <code>$HOME/.mineserver</code>. This is the
+    default if no other config file is found, so delete <code>./bin/config.cfg</code> and
+    start up the program to create the default config file in <code>$HOME/.mineserver</code>.</p>
+
+    <p>However, at this stage the server does not handle the setup process completely, so whichever
+    way you decided, you will need to make sure that the <code>recipes</code> directory and the
+    binary plugin files are located in the directory pointed to by the config file. For example,
+    by default the config file says:</p>
+
+    <div class="listing">system.path.data    = "files";
+system.path.plugins = "plugins";</div>
+
+    <p>These paths may be either absolute (like <code>/usr/share/mineserver/files</code>), or relative
+    (as in the default setting). Relative paths are <em>relative to the location of the config file</em>.
+    So if your config file resides in <code>$HOME/.mineserver/</code>, then the above configuration tells
+    <em>mineserver</em> to expect the additional configuration files (like the whitelist) in
+    <code>$HOME/.mineserver/files/</code>, recipes in <code>$HOME/.mineserver/files/recipes/</code>, and
+    plugins in <code>$HOME/.mineserver/plugins/</code>.</p>
+
+    <p><em>Please make sure that all those files are in the appropriate place!</em> Default versions of the
+    config files and recipes are located in your build directory in the <code>./bin/files/</code> subdirectory;
+    the binary plugin files are in the <code>./plugins/bin/</code> subdirectory.</p>
+
 
   </body>
 </html>
