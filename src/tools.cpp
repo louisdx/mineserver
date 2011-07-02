@@ -125,34 +125,24 @@ int32_t getSint16(uint8_t* buf)
   return val;
 }
 
-std::string base36_encode(int value)
+std::string my_itoa(int a, size_t base)
 {
-  std::string output;
-  my_itoa((int)abs(value), output, 36);
-  if (value < 0)
-  {
-    output.insert(output.begin(), '-');
-  }
+  static const char DIGITS[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVXYZ";
 
-  return output;
+  std::string res;
+
+  if (base > sizeof(DIGITS) || base < 2) return "[ERROR]";
+
+  const bool negative = a < 0;
+  if (negative) a = -a;
+
+  while (a) { res += DIGITS[a % base]; a /= base; }
+
+  if (negative) res += "-";
+
+  return std::string(res.rbegin(), res.rend());
 }
 
-void my_itoa(int value, std::string& buf, int base)
-{
-  std::string hexarray("0123456789abcdefghijklmnopqrstuvwxyz");
-  int i = 30;
-  buf = "";
-
-  if (!value)
-  {
-    buf = "0";
-  }
-
-  for (; value && i; --i, value /= base)
-  {
-    buf.insert(buf.begin(), (char)hexarray[value % base]);
-  }
-}
 
 std::string strToLower(std::string temp)
 {

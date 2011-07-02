@@ -82,21 +82,8 @@ bool RegionFile::openFile(std::string mapDir, int32_t chunkX, int32_t chunkZ)
 {
   this->x = chunkX;
   this->z = chunkZ;
-  std::string strchunkZ;
-  std::string strchunkX;
-
-  //Convert chunk x and z pos to strings
-  my_itoa(abs(chunkZ >> 5), strchunkZ, 10);
-  //If negative, add - in front
-  if ((chunkZ < 0))
-  {
-    strchunkZ = "-" + strchunkZ;
-  }
-  my_itoa(abs(chunkX >> 5), strchunkX, 10);
-  if ((chunkX < 0))
-  {
-    strchunkX = "-" + strchunkX;
-  }
+  const std::string strchunkZ = my_itoa(chunkZ / 32);
+  const std::string strchunkX = my_itoa(chunkX / 32);
 
   //Make sure we have the region directory inside mapDir
   struct stat stFileInfo;
